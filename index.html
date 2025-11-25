@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Patlatmaca: Chaos Office Edition</title>
+    <style>
+    :root { --mouse-x: 50%; --mouse-y: 50%; }
+    body { margin: 0; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f2f5; color: #333; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; transition: background-color 0.5s, filter 0.5s; }
+    
+    /* MODLAR */
+    body.overclock-mode { background-color: #000 !important; filter: contrast(1.3) brightness(0.8); }
+    body.overclock-mode canvas { box-shadow: 0 0 50px #00FF00; border-color: #00FF00; }
+    body.overclock-mode .stat-box { background: rgba(0, 0, 0, 0.8); color: #00FF00; border-color: #00FF00; }
+    body.rgb-mode { animation: rainbow-bg 2s linear infinite; }
+    @keyframes rainbow-bg { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+    /* KLİMA BOZULDU (HEAT MODE) */
+    .heat-active #game-container { box-shadow: inset 0 0 150px rgba(255, 69, 0, 0.6) !important; filter: blur(0.8px) contrast(1.1); border-color: #ff4500 !important; }
+
+    /* TEMİZLİKÇİ ABLA EFEKTLERİ */
+    @keyframes flicker-anim { 0% { opacity: 1; } 5% { opacity: 0.3; } 10% { opacity: 1; } 15% { opacity: 0.1; } 20% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+    .plug-pulled { animation: flicker-anim 0.2s infinite !important; filter: brightness(0.6) !important; }
+
+    /* IE MODE */
+    .ie-toolbar { position: absolute; left: 0; width: 100%; background: #d4d0c8; border: 2px outset #fff; z-index: 160; display: none; flex-direction: column; padding: 5px; box-sizing: border-box; font-family: Tahoma, sans-serif; font-size: 11px; color: #000; }
+    .ie-top { top: 0; height: 120px; border-bottom: 2px solid #808080; }
+    .ie-bottom { bottom: 0; height: 40px; border-top: 2px solid #808080; align-items: center; justify-content: center; display: none; }
+    .ie-address-bar { background: #fff; border: 1px inset #808080; padding: 2px; margin: 2px 0; width: 90%; }
+    .ie-btn { background: #d4d0c8; border: 1px outset #fff; padding: 2px 10px; margin-right: 5px; cursor: default; }
+    .ie-active .ie-toolbar { display: flex !important; }
+    .ie-active canvas { image-rendering: pixelated; filter: contrast(1.5) grayscale(0.2); }
+
+    #game-container { position: relative; width: 1024px; height: 768px; border: 2px solid #ccc; border-radius: 8px; background-color: #e0e0e0; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); overflow: hidden; transition: transform 0.5s; }
+    #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+    .stat-box { position: absolute; top: 20px; font-size: 16px; font-weight: bold; color: #333; background: rgba(255, 255, 255, 0.95); padding: 8px 15px; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; justify-content: center; font-family: 'Courier New', Courier, monospace; pointer-events: auto; }
+    #score-box { left: 20px; border-left: 5px solid #0078D4; }
+    #flash-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: white; opacity: 0; pointer-events: none; z-index: 150; transition: opacity 0.1s; }
+    #ups-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle 150px at var(--mouse-x) var(--mouse-y), transparent 0%, rgba(0,0,0,0.98) 100%); pointer-events: none; z-index: 48; opacity: 0; transition: opacity 0.5s; }
+    .ups-active { opacity: 1 !important; }
+    
+    .shop-open-btn { position: absolute; top: 80px; left: 20px; background: #28a745; color: white; border: none; padding: 10px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 0 #1e7e34; transition: transform 0.1s; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 5px; font-size: 14px; pointer-events: auto; z-index: 20; }
+    .shop-open-btn:hover { transform: translateY(-2px); background: #218838; }
+    .shop-open-btn:active { transform: translateY(2px); box-shadow: none; }
+    #level-board { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: #000; background-color: #FFD700; border-color: #cfa900; }
+    #right-panel { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    #ram-box { border-left: 5px solid #0078D4; min-width: 140px; background: #fff; transition: all 0.3s; }
+    .ram-text { font-weight: 900; color: #333; }
+    #firewall-box { border-left: 5px solid #00FFFF; color: #008B8B; min-width: 140px; background: #fff; transform: translateX(150%); opacity: 0; transition: transform 0.5s; display: none; }
+    .firewall-active { display: flex !important; transform: translateX(0) !important; opacity: 1 !important; }
+    .ram-offline { color: #d32f2f !important; border-color: #d32f2f !important; background-color: rgba(255, 200, 200, 0.9) !important; animation: shake 0.5s infinite; }
+    @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+    #combo-container { position: absolute; top: 120px; left: 40px; font-size: 40px; font-weight: 900; color: #ff4500; text-shadow: 2px 2px 0 rgba(0,0,0,0.2); transform: rotate(-5deg); opacity: 0; transition: opacity 0.1s; z-index: 5; font-style: italic; }
+    
+    /* --- YENİ ÇAY BARDAĞI & SIVISI --- */
+    /* --- YENİ ÇAY BARDAĞI & SIVISI (GÜNCELLENDİ) --- */
+    #tea-container { 
+        width: 60px; 
+        height: 80px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        /* Aşağıya indirme operasyonu burada: */
+        transform: translateY(20px); 
+        cursor: pointer; /* Tıklanabilir el işareti */
+        transition: transform 0.2s; /* Tıklayınca hafif oynasın */
+    }
+    
+    #tea-container:active {
+        transform: translateY(22px) scale(0.95); /* Tıklama efekti */
+    }
+    
+    #tea-glass { 
+        position: relative; width: 55px; height: 80px; 
+        clip-path: path('M 5 0 Q 0 0 0 5 L 10 35 Q 15 50 10 65 L 5 75 Q 0 80 10 80 H 45 Q 55 80 50 75 L 45 65 Q 40 50 45 35 L 55 5 Q 55 0 50 0 Z');
+        background: linear-gradient(90deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 15%), linear-gradient(-90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 10%), linear-gradient(to bottom, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+        border-top: 1px solid rgba(255,255,255,0.8); 
+        overflow: hidden; margin-bottom: 5px; z-index: 2; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+    }
+
+    #tea-liquid { 
+        position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; 
+        background: radial-gradient(circle at 50% 0%, #ff4500, #8b0000);
+        opacity: 0.9; transition: height 0.2s; z-index: 1;
+    }
+    #tea-liquid::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; transform: scaleX(0.8); }
+
+    .tea-ready #tea-glass { 
+        filter: drop-shadow(0 0 15px #ff4500); 
+        background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, transparent 15%), linear-gradient(-90deg, rgba(255,255,255,0.7) 0%, transparent 10%), radial-gradient(circle, rgba(255, 215, 0, 0.2) 0%, transparent 70%);
+        animation: glass-pulse 1s infinite alternate;
+    }
+    @keyframes glass-pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+    
+    #tea-label { margin-top: 5px; font-size: 12px; font-weight: bold; color: #555; }
+
+    /* --- YETENEK BUTONLARI --- */
+    .bottom-left-container { position: absolute; bottom: 30px; left: 30px; z-index: 20; display: flex; gap: 20px; align-items: flex-end; }
+    .skill-btn { width: 60px; height: 60px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); border: 3px solid #555; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; opacity: 0.4; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; cursor: not-allowed; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .skill-label { position: absolute; bottom: -25px; font-size: 11px; color: #333; font-weight: 900; text-shadow: 1px 1px 0 #fff; width: 100px; text-align: center; pointer-events: none; text-transform: uppercase; letter-spacing: 1px; }
+    
+    .formatc-ready { opacity: 1 !important; cursor: pointer !important; border-color: #00FF00 !important; box-shadow: 0 0 20px #00FF00, inset 0 0 10px #00FF00 !important; transform: scale(1.1); animation: pulse-btn 1.5s infinite; color: #fff; }
+    .priority-ready { opacity: 1 !important; cursor: pointer !important; border-color: #FF0000 !important; box-shadow: 0 0 20px #FF0000, inset 0 0 10px #FF0000 !important; transform: scale(1.1); animation: pulse-btn 1.5s infinite; color: #fff; }
+    .ddos-ready { opacity: 1 !important; cursor: pointer !important; border-color: #FFD700 !important; background-color: #000 !important; box-shadow: 0 0 25px #FFD700 !important; transform: scale(1.1); animation: pulse-btn 1.5s infinite; }
+    .ddos-active { animation: shake 0.1s infinite !important; background-color: #d32f2f !important; color: white; border-color: #fff !important; }
+    @keyframes pulse-btn { 0% { transform: scale(1.1); box-shadow: 0 0 15px currentColor; } 50% { transform: scale(1.15); box-shadow: 0 0 25px currentColor; } 100% { transform: scale(1.1); box-shadow: 0 0 15px currentColor; } }
+
+    canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+    #teams-notification { position: absolute; bottom: 30px; right: -400px; width: 300px; height: 70px; background-color: #fff; border-radius: 4px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); display: flex; align-items: center; padding: 10px; box-sizing: border-box; cursor: pointer; pointer-events: auto; transition: right 0.5s; z-index: 50; border-left: 4px solid #6264A7; }
+    .teams-visible { right: 30px !important; }
+    .teams-icon-box { position: relative; width: 40px; height: 40px; margin-right: 12px; display: flex; align-items: center; justify-content: center; background-color: #6264A7; border-radius: 4px; color: white; font-weight: bold; font-size: 20px; font-family: 'Segoe UI', sans-serif; }
+    .t-badge { position: absolute; bottom: -5px; right: -5px; width: 18px; height: 18px; background-color: #C4314B; border-radius: 50%; border: 2px solid #fff; color: white; font-size: 10px; font-weight: bold; text-align: center; line-height: 15px; }
+    .teams-content { display: flex; flex-direction: column; justify-content: center; }
+    .teams-sender { color: #333; font-weight: bold; font-size: 14px; margin-bottom: 2px; }
+    .teams-msg { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+    .meeting-window { position: absolute; width: 320px; height: 160px; background: #f0f0f0; border: 1px solid #999; box-shadow: 0 10px 30px rgba(0,0,0,0.5); top: 250px; left: 352px; display: none; flex-direction: column; z-index: 40; pointer-events: auto; }
+    .mw-header { background: #0078D4; color: white; padding: 6px; font-size: 13px; font-family: sans-serif; display: flex; justify-content: space-between; font-weight: bold; }
+    .mw-body { flex: 1; display: flex; align-items: center; justify-content: center; color: #333; font-weight: bold; font-size: 18px; text-align: center; padding: 20px; flex-direction: column; gap: 10px; }
+    .mw-icon { font-size: 30px; }
+    
+    /* GERİ DÖNÜŞÜM KUTUSU */
+    #recycle-bin { position: absolute; top: 250px; right: 20px; font-size: 70px; display: none; animation: float 3s infinite ease-in-out; z-index: 10; opacity: 0.8; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+    
+    #event-banner { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); background: #d32f2f; color: white; padding: 10px 30px; font-weight: bold; font-size: 20px; border-radius: 0 0 10px 10px; z-index: 30; transition: top 0.5s; border: 2px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .banner-visible { top: 0 !important; }
+    #event-description { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.85); color: #fff; padding: 8px 20px; font-size: 14px; border-radius: 20px; z-index: 29; transition: top 0.5s; border: 1px solid #666; text-align: center; max-width: 400px; }
+    .desc-visible { top: 60px !important; }
+    .overlay-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(240, 240, 240, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); transition: opacity 0.3s; color: #333; }
+    .hidden { display: none !important; }
+    .glitch-text { font-size: 5em; color: #d32f2f; text-shadow: 3px 2px 0 #333; font-weight: 900; margin: 0; letter-spacing: -2px; text-align: center; }
+    .win-text { font-size: 4em; color: #2e7d32; font-weight: 900; letter-spacing: -2px; }
+    .subtitle { color: #666; letter-spacing: 5px; margin-bottom: 40px; font-weight: bold; }
+    .restart-btn { padding: 20px 50px; font-size: 1.5em; font-weight: bold; color: #fff; background: #0078D4; border: none; cursor: pointer; margin-top: 30px; font-family: 'Courier New', monospace; border-radius: 4px; box-shadow: 0 5px 15px rgba(0, 120, 212, 0.3); }
+    .restart-btn:hover { background: #005a9e; transform: translateY(-2px); }
+    #shop-screen { background-color: rgba(240, 240, 240, 0.98); z-index: 200; color: #333; }
+    .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 90%; max-width: 1000px; margin-top: 30px; max-height: 75vh; overflow-y: auto; padding-bottom: 20px; }
+    .shop-item { background: white; border: 1px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.2s; display: flex; flex-direction: column; justify-content: space-between; }
+    .shop-item:hover { transform: translateY(-5px); border-color: #0078D4; }
+    .shop-icon { font-size: 35px; margin-bottom: 10px; }
+    .shop-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #0078D4; }
+    .shop-desc { font-size: 12px; color: #666; margin-bottom: 10px; height: 45px; }
+    .shop-level { font-size: 12px; font-weight: bold; color: #888; margin-bottom: 10px; }
+    .buy-btn { background: #0078D4; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; font-size: 12px; }
+    .buy-btn:hover { background: #005a9e; }
+    .buy-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .shop-close-btn { margin-top: 20px; padding: 15px 50px; background: #333; color: white; border: none; border-radius: 50px; font-size: 1.2em; cursor: pointer; }
+    .shop-close-btn:hover { background: #555; }
+    .current-money { font-size: 2em; color: #28a745; font-weight: bold; margin-top: 10px; font-family: 'Courier New', monospace; }
+    .dev-mode-btn { grid-column: span 4; background: #222; color: #00FF00; font-family: monospace; border: 1px solid #00FF00; padding: 15px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: all 0.3s; }
+    .dev-mode-btn:hover { background: #00FF00; color: #000; box-shadow: 0 0 15px #00FF00; }
+
+    #game-over.bsod { background-color: #0078D7 !important; color: white !important; align-items: flex-start; padding-left: 100px; font-family: 'Segoe UI', sans-serif !important; box-sizing: border-box; }
+    .bsod-face { font-size: 150px; font-weight: normal; margin-bottom: 30px; }
+    .bsod-title { font-size: 28px; margin-bottom: 20px; max-width: 800px; font-weight: 300; line-height: 1.4; }
+    .bsod-progress { font-size: 20px; margin-bottom: 40px; font-weight: 300; }
+    .bsod-footer { display: flex; align-items: center; gap: 20px; }
+    .bsod-qr { width: 100px; height: 100px; background: white; padding: 5px; }
+    .bsod-qr-pattern { width: 100%; height: 100%; background-image: radial-gradient(#0078D7 30%, transparent 31%), radial-gradient(transparent 30%, #0078D7 31%); background-size: 10px 10px; }
+    .bsod-details { font-size: 14px; line-height: 1.6; }
+    .bsod-code { font-family: monospace; background: rgba(0,0,0,0.2); padding: 2px 5px; }
+    #game-over.bsod .restart-btn { background: white; color: #0078D7; border: none; margin-top: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+    #game-over.bsod .restart-btn:hover { background: #f0f0f0; }
+    .controls-box { margin-bottom: 30px; text-align: left; width: 320px; color: #555; font-family: monospace; font-size: 1.2em; background: rgba(255,255,255,0.7); padding: 25px; border-radius: 8px; border: 1px solid #ccc; }
+    .control-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    .key { color: #0078D4; font-weight: bold; }
+    #update-screen { background-color: #0078D4; color: white; z-index: 200; cursor: wait; }
+    .loader { border: 5px solid rgba(255,255,255,0.3); border-top: 5px solid white; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    
+    /* EKRAN KARARTMA KATMANI */
+    #brightness-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; opacity: 0; pointer-events: none; z-index: 9999; transition: opacity 1s ease; }
+    
+    /* GPU DOSTU ÇAY EFEKTİ (NO-LAG) */
+    #tea-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: radial-gradient(circle at center, transparent 30%, rgba(255, 60, 0, 0.3) 70%, rgba(120, 0, 0, 0.9) 100%);
+        mix-blend-mode: overlay; opacity: 0; pointer-events: none; z-index: 9997;
+        will-change: opacity; transition: opacity 0.3s ease;
+    }
+    body.tea-active-mode #tea-overlay { opacity: 1; animation: tea-pulse 2s infinite ease-in-out; }
+    @keyframes tea-pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
+    /* TROLL POP-UP STİLİ */
+    #troll-popup {
+        position: absolute; top: 0; left: 0; width: 200px; height: 150px; background: #d4d0c8; border: 2px outset #fff; box-shadow: 10px 10px 0 rgba(0,0,0,0.5); display: none; flex-direction: column; z-index: 9998; font-family: Tahoma, sans-serif; pointer-events: none;
+    }
+    .tp-header { background: linear-gradient(to right, #000080, #1084d0); color: white; padding: 3px 5px; font-weight: bold; font-size: 12px; }
+    .tp-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; font-weight: bold; color: red; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div class="ie-toolbar ie-top">
+            <div style="background: #0078D7; color:white; font-weight:bold; padding: 2px;">Microsoft Internet Explorer</div>
+            <div style="margin-top: 2px;">
+                <span class="ie-btn">File</span><span class="ie-btn">Edit</span><span class="ie-btn">View</span><span class="ie-btn">Favorites</span><span class="ie-btn">Tools</span><span class="ie-btn">Help</span>
+            </div>
+            <div style="margin-top: 4px; display:flex; align-items:center;">
+                <span class="ie-btn">⬅ Back</span> <span class="ie-btn">➡ Forward</span> <span class="ie-btn">❌ Stop</span> <span class="ie-btn">🔄 Refresh</span> <span class="ie-btn">🏠 Home</span>
+            </div>
+            <div style="margin-top: 4px; display:flex; align-items:center;">
+                Address: <input type="text" class="ie-address-bar" value="http://exchange-server/owa/auth/logon.aspx" readonly> <span class="ie-btn">Go</span>
+            </div>
+            <div style="margin-top: 4px; border-top: 1px solid #999; padding-top:2px;">
+                <span style="font-weight:bold; color:#555;">[Ask Toolbar]</span> Search: <input type="text" size="20"> <span class="ie-btn">Search</span>
+            </div>
+        </div>
+        <div class="ie-toolbar ie-bottom">
+             <span>Done</span> <span style="margin-left:auto; border: 1px inset #999; width: 50px; height: 10px; background:green;"></span> <span style="margin-left: 5px;">Internet</span>
+        </div>
+
+        <div id="flash-layer"></div>
+        <div id="ups-layer"></div>
+        <div id="event-banner">OLAY BAŞLIĞI</div>
+        <div id="event-description">Olay açıklaması burada çıkacak.</div>
+
+        <div id="start-screen" class="overlay-screen">
+            <h1 class="glitch-text" style="text-shadow: 2px 2px 0 #0078D4; color: #333;">EXCHANGE<br>PATLATMACA</h1>
+            <p class="subtitle">CHAOS OFFICE EDITION</p>
+            <div class="controls-box">
+                <div class="control-row"><span class="key">MOUSE</span> <span>Nişan Al</span></div>
+                <div class="control-row"><span class="key">TIKLA</span> <span>Mail Gönder</span></div>
+                <div class="control-row"><span class="key">SPACE</span> <span>Çay Molası</span></div>
+            </div>
+            <button class="restart-btn" onclick="initGame()">SUNUCUYA BAĞLAN</button>
+<div id="scoreboard-container" style="margin-top: 30px; background: rgba(255,255,255,0.8); padding: 15px; border-radius: 8px; width: 300px; max-height: 200px; overflow-y: auto;">
+    <h3 style="margin: 0 0 10px 0; color: #333; border-bottom: 2px solid #0078D4;">🏆 TOP 10 🏆</h3>
+    <ul id="liderTablosu" style="list-style: none; padding: 0; margin: 0; text-align: left; font-family: monospace; font-size: 14px;">
+        <li>Yükleniyor...</li>
+    </ul>
+</div>
+        </div>
+
+        <div id="ui-layer">
+            <div id="score-box" class="stat-box">SKOR: <span id="score">0</span></div>
+            <button class="shop-open-btn" onclick="toggleShop()"><span>🛒</span> BÜTÇE: <span id="money-display">0</span> $</button>
+            
+            <div id="level-board" class="stat-box">LEVEL <span id="level-val">1</span></div>
+            
+            <div id="right-panel">
+                <div id="ram-box" class="stat-box">RAM: <span id="ram-val" class="ram-text">10 GB</span></div>
+                <div id="firewall-box" class="stat-box">FIREWALL: <span id="firewall-val">0</span></div>
+            </div>
+
+            <div id="teams-notification" onclick="handleTeamsClick()">
+                <div class="teams-icon-box">T<div class="t-badge">1</div></div>
+                <div class="teams-content">
+                    <div class="teams-sender" id="teams-sender-name">Microsoft Teams</div>
+                    <div class="teams-msg" id="teams-message-text">Okunmamış 1 ileti</div>
+                </div>
+            </div>
+
+            <div id="combo-container">COMBO x<span id="combo-val">0</span></div>
+            
+            <div class="bottom-left-container">
+                <div id="tea-container">
+                    <div id="tea-glass"><div id="tea-liquid"></div></div>
+                    <div id="tea-label">ÇAY</div>
+                </div>
+                <div id="formatc-container" class="skill-btn" onclick="activateFormatC()">
+                    <span>☢️</span>
+                    <div class="skill-label">FORMAT C</div>
+                </div>
+                <div id="priority-container" class="skill-btn" onclick="activatePriority()">
+                    <span>❗</span>
+                    <div class="skill-label">ÖNCELİK</div>
+                </div>
+                <div id="ddos-container" class="skill-btn" onclick="activateDdos()">
+                    <span>🔫</span>
+                    <div class="skill-label">DDOS (5s)</div>
+                </div>
+            </div>
+
+            <div id="recycle-bin">🗑️</div>
+
+            <div id="meeting-window" class="meeting-window">
+                <div class="mw-header"><span>📅 Acil Toplantı Hatırlatması</span><span>X</span></div>
+                <div class="mw-body">
+                    <div class="mw-icon">⚠️</div>
+                    <div>ACİL DURUM!<br>Toplantı Başladı!</div>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="shop-screen" class="overlay-screen hidden">
+            <h1 style="color: #0078D4; margin-bottom: 0;">IT BÜTÇESİ</h1>
+            <p>Donanım ve Yazılım Talepleri</p>
+            <div class="current-money">MEVCUT BÜTÇE: <span id="shop-money">0</span> $</div>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <div><div class="shop-icon">🚀</div><div class="shop-title">SSD UPGRADE</div><div class="shop-desc">Mail atış hızını artırır.</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-speed">1</span>/5</div><button class="buy-btn" id="btn-speed" onclick="buyUpgrade('speed')">SATIN AL (1000 $)</button></div>
+                </div>
+                
+                <div class="shop-item">
+                    <div><div class="shop-icon">🔮</div><div class="shop-title">OUTLOOK ÖNİZLEME</div><div class="shop-desc">Gelecek maili gösterir.</div></div>
+                    <div><div class="shop-level">DURUM: <span id="lvl-preview">YOK</span></div><button class="buy-btn" id="btn-preview" onclick="buyUpgrade('preview')">SATIN AL (2500 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">☕</div><div class="shop-title">PREMIUM ÇAY</div><div class="shop-desc">Enerji daha hızlı dolar.</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-tea">1</span>/5</div><button class="buy-btn" id="btn-tea" onclick="buyUpgrade('tea')">SATIN AL (2000 $)</button></div>
+                </div>
+                
+                <div class="shop-item">
+                    <div><div class="shop-icon">📢</div><div class="shop-title">REPLY ALL YETKİSİ</div><div class="shop-desc">Şans eseri alan hasarı verir!</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-replyall">0</span>/5</div><button class="buy-btn" id="btn-replyall" onclick="buyUpgrade('replyall')">SATIN AL (3500 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">🛡️</div><div class="shop-title">ANTI-SPAM PRO</div><div class="shop-desc">Daha az SPAM mail gelir.</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-antispam">0</span>/5</div><button class="buy-btn" id="btn-antispam" onclick="buyUpgrade('antispam')">SATIN AL (2500 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">☁️</div><div class="shop-title">CLOUD MIGRATION</div><div class="shop-desc">Otomatik mail siler.</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-cloud">0</span>/5</div><button class="buy-btn" id="btn-cloud" onclick="buyUpgrade('cloud')">SATIN AL (4000 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">🚀</div><div class="shop-title">SSD RAID 0</div><div class="shop-desc">Update'ler şimşek gibi biter.</div></div>
+                    <div><div class="shop-level">SEVİYE: <span id="lvl-ssd">0</span>/5</div><button class="buy-btn" id="btn-ssd" onclick="buyUpgrade('ssd')">SATIN AL (2000 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">❗</div><div class="shop-title">YÜKSEK ÖNCELİK</div><div class="shop-desc">Delici atış!</div></div>
+                    <div><div class="shop-level">TEK SEFERLİK</div><button class="buy-btn" id="btn-priority" onclick="buyUpgrade('priority')">SATIN AL (2000 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">☢️</div><div class="shop-title">FORMAT C:</div><div class="shop-desc">Bölgesel temizlik.</div></div>
+                    <div><div class="shop-level">TEK SEFERLİK</div><button class="buy-btn" id="btn-formatc" onclick="buyUpgrade('formatc')">SATIN AL (3000 $)</button></div>
+                </div>
+
+                <div class="shop-item">
+                    <div><div class="shop-icon">🔫</div><div class="shop-title">BOTNET (DDoS)</div><div class="shop-desc">5 Saniye taramalı!</div></div>
+                    <div><div class="shop-level">TEK SEFERLİK</div><button class="buy-btn" id="btn-ddos" onclick="buyUpgrade('ddos')">SATIN AL (5000 $)</button></div>
+                </div>
+
+                <button class="dev-mode-btn" onclick="toggleDevMode()">[ </> GELİŞTİRİCİ MODU ]</button>
+            </div>
+            <button class="shop-close-btn" onclick="toggleShop()">KAPAT VE DEVAM ET</button>
+        </div>
+
+        <div id="update-screen" class="overlay-screen hidden">
+            <div class="loader"></div>
+            <h2 style="font-weight: normal;">Configuring updates</h2>
+            <p style="margin-top: 10px;"><span id="update-percent">0</span>% complete</p>
+            <p style="opacity: 0.8; margin-top: 20px; font-size: 0.9em;">Do not turn off your computer</p>
+        </div>
+
+        <div id="game-over" class="overlay-screen hidden bsod">
+            <div class="bsod-face">:(</div>
+            <div class="bsod-title">Exchange Sunucusu bir sorunla karşılaştı ve kapatılması gerekiyor.</div>
+            <div class="bsod-progress">%100 tamamlandı</div>
+            <div class="bsod-footer">
+                <div class="bsod-qr"><div class="bsod-qr-pattern"></div></div>
+                <div class="bsod-details">
+                    <p>Durdurma Kodu: <span class="bsod-code">CRITICAL_EXCHANGE_FAILURE</span></p>
+                    <p>Başarısız Hizmet: <span class="bsod-code">store.exe (RAM_OVERFLOW)</span></p>
+                    <p>Kaydedilen Veri (Skor): <span id="final-score-val" class="bsod-code">0</span></p>
+                </div>
+            </div>
+<div style="margin-top: 20px;">
+    <input type="text" id="oyuncuAdiInput" placeholder="ADINIZ (Max 10 krktr)" maxlength="10" 
+           style="padding: 10px; font-size: 18px; width: 200px; font-family: 'Courier New'; text-transform: uppercase;">
+    <button onclick="skoruGonder()" 
+            style="padding: 10px 20px; font-size: 18px; background: #fff; color: #0078D7; border: none; font-weight: bold; cursor: pointer;">
+        KAYDET
+    </button>
+</div>
+            <button class="restart-btn" onclick="restartGame()">RESTART SERVICE</button>
+        </div>
+
+        <div id="game-win" class="overlay-screen hidden">
+            <h1 class="win-text" style="color: #0078D4; text-shadow: none;">SERVER DOWN</h1>
+            <p style="color:#555; font-size: 1.2em;">Tebrikler! Sunucu tamamen pert oldu.</p>
+            <p style="color: #0078D4; font-size: 2em; font-weight: bold; margin-top: 30px;">Toplam Prim: <span id="win-score-val">0</span> $</p>
+            <button class="restart-btn" onclick="restartGame()">NEW SERVER</button>
+        </div>
+    </div>
+<div id="tea-overlay"></div>
+<div id="brightness-overlay"></div>
+<div id="troll-popup">
+    <div class="tp-header">⚠️ SİSTEM UYARISI <span style="float:right; cursor:pointer;">X</span></div>
+    <div class="tp-body">
+        <div style="font-size: 40px;">💾</div>
+        <div>RAM BİTİYOR!<br>HEMEN İNDİR!</div>
+        <button style="margin-top:5px;">TIKLA (BEDAVA)</button>
+    </div>
+</div>
+
+<script>
+    const GAME_WIDTH = 1024; const GAME_HEIGHT = 768; const dpr = window.devicePixelRatio || 1;
+    const AudioContext = window.AudioContext || window.webkitAudioContext; const audioCtx = new AudioContext();
+    const gameContainer = document.getElementById('game-container'); const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d'); canvas.width = GAME_WIDTH * dpr; canvas.height = GAME_HEIGHT * dpr; ctx.scale(dpr, dpr);
+    const gameOverScreen = document.getElementById('game-over'); const updateScreen = document.getElementById('update-screen');
+    const startScreen = document.getElementById('start-screen'); const shopScreen = document.getElementById('shop-screen');
+    const updatePercentEl = document.getElementById('update-percent'); const scoreEl = document.getElementById('score');
+    const finalScoreEl = document.getElementById('final-score-val'); const levelEl = document.getElementById('level-val');
+    const teaLiquidEl = document.getElementById('tea-liquid'); const teaContainerEl = document.getElementById('tea-container');
+    const teaLabelEl = document.getElementById('tea-label'); const flashLayer = document.getElementById('flash-layer');
+    const eventBanner = document.getElementById('event-banner'); const eventDescription = document.getElementById('event-description');
+    const upsLayerEl = document.getElementById('ups-layer');
+    const brightnessOverlay = document.getElementById('brightness-overlay');
+    let darknessLevel = 0;
+    const meetingWindow = document.getElementById('meeting-window'); const recycleBinEl = document.getElementById('recycle-bin');
+    const formatcContainerEl = document.getElementById('formatc-container'); const priorityContainerEl = document.getElementById('priority-container');
+    const ddosContainerEl = document.getElementById('ddos-container'); const ramValEl = document.getElementById('ram-val');
+    const ramBoxEl = document.getElementById('ram-box'); const firewallBoxEl = document.getElementById('firewall-box');
+    const firewallValEl = document.getElementById('firewall-val'); const comboContainer = document.getElementById('combo-container');
+    const comboValEl = document.getElementById('combo-val'); const teamsNotifEl = document.getElementById('teams-notification');
+    const teamsSenderEl = document.getElementById('teams-sender-name'); const teamsMsgEl = document.getElementById('teams-message-text');
+    const shopMoneyEl = document.getElementById('shop-money'); const moneyDisplayEl = document.getElementById('money-display');
+    
+    // UPGRADE ELEMANLARI
+    const lvlSpeedEl = document.getElementById('lvl-speed'); const lvlTeaEl = document.getElementById('lvl-tea');
+    const lvlReplyEl = document.getElementById('lvl-replyall'); const lvlAntiSpamEl = document.getElementById('lvl-antispam'); const lvlCloudEl = document.getElementById('lvl-cloud'); const lvlSsdEl = document.getElementById('lvl-ssd');
+    const lvlPreviewEl = document.getElementById('lvl-preview');
+    
+    const btnSpeed = document.getElementById('btn-speed'); const btnTea = document.getElementById('btn-tea');
+    const btnReply = document.getElementById('btn-replyall'); const btnAntiSpam = document.getElementById('btn-antispam'); const btnCloud = document.getElementById('btn-cloud'); const btnSsd = document.getElementById('btn-ssd');
+    const btnPreview = document.getElementById('btn-preview');
+
+    const mailColors = ['#0078D4', '#EA4300', '#FFB900', '#107C10', '#B146C2']; const spamColor = '#999'; const encryptedColor = '#555';
+    const logicRadius = 18; const visualRadius = 17; const shooterRadius = 15; const shooterY = GAME_HEIGHT - 30;
+    const exchangeLogo = { x: GAME_WIDTH / 2, y: GAME_HEIGHT / 3.2, radius: 75, color: '#0078D4', innerColor: '#fff' };
+    
+    const eventDescriptions = { 'wind': "DİKKAT! Fanlar bozuldu, rüzgar atışlarını saptıracak.", 'glitch': "HATA! Bozuk toplar rastgele ışınlanıyor.", 'vpn': "İPUCU! Soldan atarsan sağdan çıkar. Arka kapıyı kullan.", 'cable': "KARIŞIKLIK! Kablolar dolanmış (Sadece görsel kaos).", '2fa': "KİLİT! Korumayı kaldırmak için önce sarı anahtarı (🔑) vur.", 'meeting': "ENGEL! Outlook penceresi atışlarını engelliyor.", 'bin': "TEHLİKE! Geri dönüşüm kutusu mermilerini yutabilir.", 'invert': "ARIZA! Mouse kontrolleri tersine döndü!", 'lag': "BAĞLANTI HATASI! Ping 999ms, atışlar gecikmeli.", 'ups': "ELEKTRİK KESİNTİSİ! Sadece fenerle önünü görebilirsin.", 'rgb': "RGB ZEHİRLENMESİ! Renkler birbirine girdi.", 'plug': "🔌 FİŞ ÇEKİLDİ! Elektrik gidip geliyor, kabloyu vurup tak!", 'ie': "💾 UYARI: IE6 TESPİT EDİLDİ! Toolbars saldırısı!", 'kvkk': "❌ KVKK UYARISI! Veriler sansürlendi (Gizlilik Modu).", 'heat': "🔥 KLİMA BOZULDU! Sunucu odası yanıyor!", 'nephew': "👑 UYARI: CEO'NUN YEĞENİ SİSTEMDE! (Dokunulmaz)" };
+
+    let shooterSpeed = 12; let teaFillRate = 50; let aimLineLength = 200; let aimBounces = 2;
+    let mails = []; let fallingMails = []; let incomingSpams = []; let particles = []; let floatingTexts = []; let shockwaves = [];
+    let shooterMail = null; let ddosBullets = []; let bossProjectiles = []; let bossAttackTimer = 0;
+    let nextShooterMail = null;
+
+    let proxyShields = []; let proxyRotationAngle = 0; let isOverclockActive = false;
+    let activeEvent = null; let eventTimer = 0; let nextEventTime = 0; let windSpeed = 0; let cloudAlpha = 0;
+    
+    let is2FALocked = false; 
+    let keyBall = null; 
+    let isMouseInverted = false; 
+    let isSlipperyMouse = false; // Oğuz abinin mouse temizliği için
+    let isLagActive = false; 
+    let isUpsActive = false; 
+    let isRgbActive = false;
+    let isGravityBroken = false; // Tesisatçı Rıza için
+    let isStalkerAdActive = false; // Berke için
+    const trollPopupEl = document.getElementById('troll-popup');
+    
+    let isSafeMode = false; let angle = -Math.PI / 2; let exchangeRotationSpeed = 0.004; let exchangeRotationAngle = 0;
+    let scanlineOffset = 0; // Hologram için
+    let isGameOver = false; let isGameRunning = false; let isWinMenuOpen = false; let isUpdating = false; let updateProgress = 0;
+    let score = 0; let money = 0; let highScore = 0; let animationId = null;
+    let screenShake = 0; let bossHitFlash = 0; let isBossDestroyed = false; let bossMaxHP = 10; let bossHP = 10; let rainbowHue = 0;
+    let currentLevel = 1; let isLevelTransition = false; let teaCharge = 0; let isTeaActive = false; let timeScale = 1.0; let comboCount = 0;
+    let isFirewallActive = false; let firewallHP = 0; let firewallAngle = 0; let hasFirewallActivated = false;
+    let isTeamsActive = false; let currentScenario = null; let teamsTimeout = null; let isUpdateBlocked = false; let isDiscoMode = false; let isRotatedMode = false;
+    let isShopOpen = false; let isFormatCReady = false; let isPriorityReady = false; let isDdosReady = false; let isDdosActive = false; let isMouseDown = false;
+    let isPlugPulled = false; let plugTarget = null; let nephewBall = null; let lastCloudTime = 0;
+
+    const upgrades = { 
+        speed: { level: 1, max: 5, cost: 1000, increment: 500 }, 
+        preview: { level: 0, max: 1, cost: 2500, increment: 0 }, 
+        tea: { level: 1, max: 5, cost: 2000, increment: 1000 },
+        replyall: { level: 0, max: 5, cost: 3500, increment: 1500 },
+        antispam: { level: 0, max: 5, cost: 2500, increment: 1000 },
+        cloud: { level: 0, max: 5, cost: 4000, increment: 1500 },
+        ssd: { level: 0, max: 5, cost: 2000, increment: 1000 }
+    };
+
+    class Particle {
+        constructor(x, y, color, speedMultiplier = 1, useGravity = false) {
+            this.x = x; this.y = y; this.color = color; const a = Math.random() * Math.PI * 2; const s = Math.random() * 10 * speedMultiplier;
+            this.vx = Math.cos(a) * s; this.vy = Math.sin(a) * s; this.radius = Math.random() * 4 + 2; this.alpha = 1; this.decay = Math.random() * 0.02 + 0.01; this.useGravity = useGravity; this.friction = 0.96;
+        }
+        update() { if (this.useGravity) this.vy += 0.4 * timeScale; this.x += this.vx * timeScale; this.y += this.vy * timeScale; this.vx *= this.friction; this.vy *= this.friction; this.alpha -= this.decay * timeScale; }
+        draw() { ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); ctx.restore(); }
+    }
+    class Shockwave {
+        constructor(x, y) { this.x = x; this.y = y; this.radius = 1; this.alpha = 1; this.speed = 15; }
+        update() { this.radius += this.speed * timeScale; this.alpha -= 0.05 * timeScale; }
+        draw() { if (this.alpha <= 0) return; ctx.save(); ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.lineWidth = 5; ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`; ctx.stroke(); ctx.restore(); }
+    }
+    class FloatingText {
+        constructor(x, y, text, color) { this.x = x; this.y = y; this.text = text; this.color = color; this.velocity = 1.5; this.alpha = 1; this.life = 60; }
+        update() { this.y -= this.velocity * timeScale; this.life -= 1 * timeScale; if (this.life < 20) this.alpha -= 0.05 * timeScale; }
+        draw() { ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color; ctx.font = "bold 24px 'Courier New', monospace"; ctx.shadowColor = "rgba(255,255,255,0.5)"; ctx.shadowBlur = 4; ctx.fillText(this.text, this.x, this.y); ctx.restore(); }
+    }
+    class IncomingMail {
+        constructor(forcedType = null) {
+            const side = Math.floor(Math.random() * 3);
+            if (side === 0) { this.x = Math.random() * GAME_WIDTH; this.y = -20; } else if (side === 1) { this.x = -20; this.y = Math.random() * (GAME_HEIGHT / 2); } else { this.x = GAME_WIDTH + 20; this.y = Math.random() * (GAME_HEIGHT / 2); }
+            this.type = 'user'; this.color = mailColors[Math.floor(Math.random() * mailColors.length)];
+            if(forcedType === 'spam') { this.color = spamColor; this.type = 'spam'; } else if (!forcedType) { 
+                const rand = Math.random(); 
+                let spamChance = 0.35 - (upgrades.antispam.level * 0.025);
+                if (rand < spamChance) { this.color = spamColor; this.type = 'spam'; } 
+                else if (currentLevel >= 3 && rand < spamChance + 0.1) { this.color = encryptedColor; this.type = 'encrypted'; } 
+            }
+            this.radius = logicRadius; this.speed = (2 + Math.random() * 2) + (currentLevel * 0.1);
+            const angleToCenter = Math.atan2(exchangeLogo.y - this.y, exchangeLogo.x - this.x); this.dx = Math.cos(angleToCenter) * this.speed; this.dy = Math.sin(angleToCenter) * this.speed;
+        }
+        update() { this.x += this.dx * timeScale; this.y += this.dy * timeScale; }
+    }
+
+    function restartGame() { initGame(); }
+    function activateSafeMode(duration) { isSafeMode = true; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "GÜVENLİ MOD AKTİF (15s)", "#00FF00"); setTimeout(() => { isSafeMode = false; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "GÜVENLİ MOD BİTTİ!", "#d32f2f"); }, duration); }
+    function playSound(type) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain(); osc.connect(gainNode); gainNode.connect(audioCtx.destination); const now = audioCtx.currentTime;
+        if (type === 'shoot') { osc.type = 'triangle'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.15, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
+        else if (type === 'pop') { osc.type = 'sine'; const pitch = 250 + (comboCount * 60); osc.frequency.setValueAtTime(pitch, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.15); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15); osc.start(now); osc.stop(now + 0.15); }
+        else if (type === 'hit') { osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(80, now + 0.1); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
+        else if (type === 'clank') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.1); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1); osc.start(now); osc.stop(now + 0.1); }
+        else if (type === 'shield_break') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, now); osc.frequency.linearRampToValueAtTime(10, now + 0.4); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); }
+        else if (type === 'powerup') { osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(800, now + 0.4); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); }
+        else if (type === 'error') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(50, now + 0.3); gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
+        else if (type === 'teams') { osc.type = 'sine'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(800, now + 0.1); osc.frequency.setValueAtTime(1200, now + 0.15); gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); }
+        else if (type === 'ddos') { osc.type = 'square'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.05); gainNode.gain.setValueAtTime(0.05, now); gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05); osc.start(now); osc.stop(now + 0.05); }
+    }
+    function toggleShop() { if (isGameOver || isUpdating) return; isShopOpen = !isShopOpen; if (isShopOpen) { shopScreen.classList.remove('hidden'); updateShopUI(); } else { shopScreen.classList.add('hidden'); } }
+    
+    function toggleDevMode() {
+        const pass = prompt("Geliştirici Şifresini Girin:");
+        if (pass === "Gtechh09") {
+            money = 999999999;
+            updateScoreDisplay();
+            updateShopUI();
+            playSound('powerup');
+            createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "DEV MODE: UNLIMITED MONEY!", "#00FF00");
+            alert("Geliştirici Modu Aktif! Sınırsız Bütçe Tanımlandı.");
+        } else {
+            playSound('error');
+            alert("Hatalı Şifre!");
+        }
+    }
+
+    function updateShopUI() {
+        shopMoneyEl.innerText = money;
+        lvlSpeedEl.innerText = upgrades.speed.level; btnSpeed.innerText = upgrades.speed.level >= upgrades.speed.max ? "MAX" : `AL (${upgrades.speed.cost} $)`; btnSpeed.disabled = (money < upgrades.speed.cost) || (upgrades.speed.level >= upgrades.speed.max);
+        
+        const btnPreview = document.getElementById('btn-preview');
+        const lvlPreview = document.getElementById('lvl-preview');
+        if(btnPreview && lvlPreview) {
+            lvlPreview.innerText = upgrades.preview.level > 0 ? "ALINDI" : "YOK";
+            if (upgrades.preview.level > 0) {
+                btnPreview.innerText = "SATIN ALINDI";
+                btnPreview.disabled = true;
+            }
+            else { btnPreview.innerText = "SATIN AL (2500 $)"; btnPreview.disabled = (money < 2500); }
+        }
+
+        lvlTeaEl.innerText = upgrades.tea.level; btnTea.innerText = upgrades.tea.level >= upgrades.tea.max ? "MAX" : `AL (${upgrades.tea.cost} $)`; btnTea.disabled = (money < upgrades.tea.cost) || (upgrades.tea.level >= upgrades.tea.max);
+        lvlReplyEl.innerText = upgrades.replyall.level; btnReply.innerText = upgrades.replyall.level >= upgrades.replyall.max ? "MAX" : `AL (${upgrades.replyall.cost} $)`; btnReply.disabled = (money < upgrades.replyall.cost) || (upgrades.replyall.level >= upgrades.replyall.max);
+        lvlAntiSpamEl.innerText = upgrades.antispam.level; btnAntiSpam.innerText = upgrades.antispam.level >= upgrades.antispam.max ? "MAX" : `AL (${upgrades.antispam.cost} $)`; btnAntiSpam.disabled = (money < upgrades.antispam.cost) || (upgrades.antispam.level >= upgrades.antispam.max);
+        lvlCloudEl.innerText = upgrades.cloud.level; btnCloud.innerText = upgrades.cloud.level >= upgrades.cloud.max ? "MAX" : `AL (${upgrades.cloud.cost} $)`; btnCloud.disabled = (money < upgrades.cloud.cost) || (upgrades.cloud.level >= upgrades.cloud.max);
+        lvlSsdEl.innerText = upgrades.ssd.level; btnSsd.innerText = upgrades.ssd.level >= upgrades.ssd.max ? "MAX" : `AL (${upgrades.ssd.cost} $)`; btnSsd.disabled = (money < upgrades.ssd.cost) || (upgrades.ssd.level >= upgrades.ssd.max);
+
+        const btnFormatC = document.getElementById('btn-formatc'); if(btnFormatC) { if (isFormatCReady) { btnFormatC.innerText = "HAZIR"; btnFormatC.disabled = true; } else { btnFormatC.innerText = "SATIN AL (3000 $)"; btnFormatC.disabled = (money < 3000); } }
+        const btnPriority = document.getElementById('btn-priority'); if(btnPriority) { if (isPriorityReady) { btnPriority.innerText = "HAZIR"; btnPriority.disabled = true; } else { btnPriority.innerText = "SATIN AL (2000 $)"; btnPriority.disabled = (money < 2000); } }
+        const btnDdos = document.getElementById('btn-ddos'); if(btnDdos) { if (isDdosReady) { btnDdos.innerText = "HAZIR"; btnDdos.disabled = true; } else { btnDdos.innerText = "SATIN AL (5000 $)"; btnDdos.disabled = (money < 5000); } }
+    }
+    function buyUpgrade(type) {
+        if (type === 'formatc') { if (money >= 3000 && !isFormatCReady) { money -= 3000; isFormatCReady = true; isPriorityReady = false; isDdosReady = false; playSound('powerup'); updateScoreDisplay(); updateShopUI(); updateSkillsDisplay(); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT - 100, "FORMAT C: HAZIR!", "#000"); toggleShop(); } else playSound('hit'); return; }
+        if (type === 'priority') { if (money >= 2000 && !isPriorityReady) { money -= 2000; isPriorityReady = true; isFormatCReady = false; isDdosReady = false; playSound('powerup'); updateScoreDisplay(); updateShopUI(); updateSkillsDisplay(); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT - 100, "ÖNCELİK HAZIR!", "#FF0000"); toggleShop(); } else playSound('hit'); return; }
+        if (type === 'ddos') { if (money >= 5000 && !isDdosReady) { money -= 5000; isDdosReady = true; isFormatCReady = false; isPriorityReady = false; playSound('powerup'); updateScoreDisplay(); updateShopUI(); updateSkillsDisplay(); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT - 100, "BOTNET HAZIR!", "#ffcc00"); toggleShop(); } else playSound('hit'); return; }
+        
+        const upgrade = upgrades[type]; 
+        if (money >= upgrade.cost && upgrade.level < upgrade.max) { 
+            money -= upgrade.cost; 
+            upgrade.level++; 
+            upgrade.cost += upgrade.increment; 
+            
+            if(type === 'speed') shooterSpeed += 2; 
+            if(type === 'tea') teaFillRate -= 4; 
+            if(type === 'preview') createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "ÖNGÖRÜ AÇILDI!", "#00BFFF");
+
+            playSound('powerup'); updateScoreDisplay(); updateShopUI(); 
+        } else { playSound('hit'); }
+    }
+    function updateSkillsDisplay() {
+        formatcContainerEl.classList.remove('formatc-ready'); priorityContainerEl.classList.remove('priority-ready'); ddosContainerEl.classList.remove('ddos-ready'); ddosContainerEl.classList.remove('ddos-active');
+        if (isFormatCReady) formatcContainerEl.classList.add('formatc-ready'); if (isPriorityReady) priorityContainerEl.classList.add('priority-ready'); if (isDdosReady) ddosContainerEl.classList.add('ddos-ready'); if (isDdosActive) ddosContainerEl.classList.add('ddos-active');
+    }
+    function activateFormatC() { if (isFormatCReady && shooterMail && !shooterMail.isMoving && !isGameOver && !isDdosActive) { shooterMail.type = 'formatc'; shooterMail.color = '#000'; playSound('powerup'); } }
+    function activatePriority() { if (isPriorityReady && shooterMail && !shooterMail.isMoving && !isGameOver && !isDdosActive) { shooterMail.type = 'priority'; shooterMail.color = '#FF0000'; playSound('powerup'); } }
+    
+    function activateDdos() { if (isDdosReady && !isDdosActive && !isGameOver) { isDdosReady = false; isDdosActive = true; updateSkillsDisplay(); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "BOTNET ATTACK!!!", "#ffcc00"); setTimeout(() => { isDdosActive = false; updateSkillsDisplay(); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "BOTNET OFFLINE", "#333"); }, 5000); } }
+    function fireDdosBullet() { if(!isGameOver) { const speed = 20; const dx = Math.cos(angle) * speed; const dy = Math.sin(angle) * speed; ddosBullets.push({ x: GAME_WIDTH / 2, y: shooterY, vx: dx, vy: dy, radius: 6, color: '#00FF00' }); playSound('ddos'); screenShake = 2; } }
+
+    function triggerRandomEvent() { 
+        if (activeEvent || isGameOver || isLevelTransition || isShopOpen) return; 
+        
+        const events = ['wind', 'glitch', 'vpn', 'cable', '2fa', 'meeting', 'bin', 'invert', 'lag', 'ups', 'rgb', 'plug', 'ie', 'kvkk', 'heat', 'nephew']; 
+        
+        const selected = events[Math.floor(Math.random() * events.length)]; 
+        startEvent(selected); 
+    }
+
+    function startEvent(type) {
+        activeEvent = type; let duration = 15000; activateSafeMode(15000); eventBanner.classList.add('banner-visible'); playSound('teams'); eventDescription.innerText = eventDescriptions[type]; eventDescription.classList.add('desc-visible'); setTimeout(() => { eventDescription.classList.remove('desc-visible'); }, 10000);
+        
+        if (type === 'wind') { eventBanner.innerText = "💨 UYARI: FAN ARIZASI (Rüzgar)"; windSpeed = (Math.random() < 0.5 ? -1.5 : 1.5); }
+        else if (type === 'glitch') { eventBanner.innerText = "👾 HATA: KOD BOZUKLUĞU"; mails.forEach(m => { if(Math.random() < 0.2) { m.type = 'glitch'; m.color = '#333'; } }); }
+        else if (type === 'vpn') { eventBanner.innerText = "🌀 BİLGİ: VPN TÜNELİ AÇIK"; }
+        else if (type === 'cable') { eventBanner.innerText = "🍝 HATA: KABLO KARIŞIKLIĞI"; }
+        else if (type === '2fa') { 
+            eventBanner.innerText = "🔐 GÜVENLİK: 2FA KİLİDİ AKTİF"; 
+            is2FALocked = true; 
+            keyBall = { x: Math.random() * (GAME_WIDTH - 100) + 50, y: Math.random() * (GAME_HEIGHT/2) + 50, radius: 25 }; 
+        }
+        else if (type === 'meeting') { eventBanner.innerText = "📅 UYARI: ACİL TOPLANTI"; meetingWindow.style.display = 'flex'; }
+        else if (type === 'bin') { eventBanner.innerText = "🗑️ UYARI: VERİ KAYBI RİSKİ"; recycleBinEl.style.display = 'block'; }
+        else if (type === 'invert') { eventBanner.innerText = "🖱️ ARIZA: MOUSE BOZULDU"; isMouseInverted = true; }
+        else if (type === 'lag') { eventBanner.innerText = "📶 HATA: YÜKSEK PING (999ms)"; isLagActive = true; }
+        else if (type === 'ups') { eventBanner.innerText = "🔋 UYARI: ELEKTRİK KESİNTİSİ"; isUpsActive = true; upsLayerEl.classList.add('ups-active'); }
+        else if (type === 'rgb') { eventBanner.innerText = "🌈 HATA: RGB ZEHİRLENMESİ"; isRgbActive = true; document.body.classList.add('rgb-mode'); }
+        else if (type === 'plug') { eventBanner.innerText = "🔌 UYARI: FİŞ ÇEKİLDİ!"; isPlugPulled = true; gameContainer.classList.add('plug-pulled'); duration = 30000; const side = Math.random() < 0.5 ? 'left' : 'right'; const plugX = side === 'left' ? Math.random() * 150 + 50 : GAME_WIDTH - (Math.random() * 150 + 50); const plugY = Math.random() * (GAME_HEIGHT / 2) + 50; plugTarget = { x: plugX, y: plugY, radius: 30 }; }
+        else if (type === 'ie') { eventBanner.innerText = "💾 UYARI: LEGACY BROWSER MODU"; document.body.classList.add('ie-active'); }
+        else if (type === 'kvkk') { eventBanner.innerText = "❌ UYARI: KVKK SANSÜRÜ AKTİF!"; }
+        else if (type === 'heat') { eventBanner.innerText = "🔥 UYARI: KLİMA BOZULDU!"; document.body.classList.add('heat-active'); }
+        else if (type === 'nephew') { eventBanner.innerText = "👑 UYARI: CEO'NUN YEĞENİ SİSTEMDE!"; nephewBall = { x: GAME_WIDTH/2, y: GAME_HEIGHT/2, dx: 3, dy: 2, radius: 25 }; }
+        
+        if (type !== 'plug' && type !== '2fa') setTimeout(() => { endEvent(type); }, duration);
+    }
+    function endEvent(type) {
+        activeEvent = null; eventBanner.classList.remove('banner-visible'); eventDescription.classList.remove('desc-visible');
+        if(type === 'wind') windSpeed = 0; if(type === '2fa') { is2FALocked = false; keyBall = null; }
+        if(type === 'meeting') meetingWindow.style.display = 'none'; if(type === 'bin') recycleBinEl.style.display = 'none';
+        
+        if(type === 'invert') isMouseInverted = false;
+        if(type === 'lag') isLagActive = false; if(type === 'ups') { isUpsActive = false; upsLayerEl.classList.remove('ups-active'); }
+        if(type === 'rgb') { isRgbActive = false; document.body.classList.remove('rgb-mode'); }
+        if(type === 'plug') { isPlugPulled = false; gameContainer.classList.remove('plug-pulled'); plugTarget = null; timeScale = isOverclockActive ? 0.7 : 1.0; }
+        if(type === 'ie') { document.body.classList.remove('ie-active'); }
+        if(type === 'heat') { document.body.classList.remove('heat-active'); }
+        if(type === 'nephew') { nephewBall = null; }
+        resetEventTimer();
+    }
+    function resetEventTimer() { eventTimer = 0; nextEventTime = Date.now() + (20000 + Math.random() * 20000); }
+    function drawCables() { if(activeEvent !== 'cable') return; ctx.save(); ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.beginPath(); mails.forEach((m, i) => { for(let j = i + 1; j < mails.length; j++) { const m2 = mails[j]; const dist = Math.hypot(m.x - m2.x, m.y - m2.y); if(dist < logicRadius * 2.5) { ctx.moveTo(m.x, m.y); ctx.lineTo(m2.x, m2.y); } } }); ctx.stroke(); ctx.restore(); }
+    function triggerTeamsNotification() {
+        if(activeEvent || isGameOver || isLevelTransition || isShopOpen) return; isTeamsActive = true; const scenarios = ['sedat', 'nehir', 'sudenaz', 'oguz', 'hasan', 'tamer', 'popcu_berke']; 
+        currentScenario = scenarios[Math.floor(Math.random() * scenarios.length)]; teamsSenderEl.innerText = "Microsoft Teams"; teamsMsgEl.innerText = "Okunmamış 1 ileti"; teamsMsgEl.style.color = "#666"; teamsNotifEl.style.borderLeftColor = "#6264A7"; teamsNotifEl.classList.add('teams-visible'); playSound('teams'); if(teamsTimeout) clearTimeout(teamsTimeout); teamsTimeout = setTimeout(() => { hideTeamsNotification(); }, 10000);
+    }
+    function hideTeamsNotification() { teamsNotifEl.classList.remove('teams-visible'); isTeamsActive = false; currentScenario = null; }
+    
+    function handleTeamsClick() {
+        if(!isTeamsActive) return; if(teamsTimeout) clearTimeout(teamsTimeout);
+        isUpdateBlocked = true; setTimeout(() => { isUpdateBlocked = false; }, 30000); createFloatingText(GAME_WIDTH - 150, GAME_HEIGHT - 50, "UPDATES BLOCKED (30s)", "#00FFFF"); activateSafeMode(15000);
+        
+        if(currentScenario === 'sedat') { 
+            teaCharge = 100; updateTeaDisplay(); playSound('powerup'); teamsSenderEl.innerText = "Çaycı Sedat"; teamsMsgEl.innerText = "✅ Herkese benden çay!"; teamsMsgEl.style.color = "#2e7d32"; teamsNotifEl.style.borderLeftColor = "#2e7d32"; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT-100, "ÇAY MOLASI!", "#FF4500"); 
+        }
+        else if (currentScenario === 'nehir') { 
+            for(let i=0; i<5; i++) incomingSpams.push(new IncomingMail('user')); playSound('hit'); teamsSenderEl.innerText = "Nehir Çelik"; teamsMsgEl.innerText = "❌ Mail sorunum var!"; teamsMsgEl.style.color = "#d32f2f"; teamsNotifEl.style.borderLeftColor = "#d32f2f"; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "TICKET SPAM!", "#d32f2f"); 
+        }
+        else if (currentScenario === 'sudenaz') { 
+            playSound('error');
+            mails.forEach(m => { m.color = mailColors[Math.floor(Math.random() * mailColors.length)]; });
+            teamsSenderEl.innerText = "Stajyer Sudenaz"; 
+            teamsMsgEl.innerText = "📂 Dosyaları 'düzenledim' :)"; 
+            teamsMsgEl.style.color = "#FFD700"; teamsNotifEl.style.borderLeftColor = "#FFD700"; 
+            createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "RENKLER KARIŞTI!", "#FFD700"); 
+        }
+        else if (currentScenario === 'oguz') { 
+            playSound('clank'); 
+            isSlipperyMouse = true; 
+            setTimeout(() => { isSlipperyMouse = false; }, 8000); 
+            
+            teamsSenderEl.innerText = "Oğuz Ertele"; 
+            teamsMsgEl.innerText = "🖱️ Mouse'u sildim, ıslak olabilir."; 
+            teamsMsgEl.style.color = "#795548"; teamsNotifEl.style.borderLeftColor = "#795548"; 
+            createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "MOUSE KAYIYOR!", "#795548"); 
+        }
+        else if (currentScenario === 'hasan') { isDiscoMode = true; playSound('powerup'); teamsSenderEl.innerText = "Hasan Canikli"; teamsMsgEl.innerText = "🎉 Server odasında parti!"; teamsMsgEl.style.color = "#FF00FF"; teamsNotifEl.style.borderLeftColor = "#FF00FF"; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "DISCO MODE!", "#FF00FF"); setTimeout(() => { isDiscoMode = false; document.body.style.backgroundColor = "#f0f2f5"; }, 5000); }
+        else if (currentScenario === 'tamer') { isRotatedMode = true; gameContainer.style.transform = "rotate(180deg)"; playSound('error'); teamsSenderEl.innerText = "Tamer Taşkaya"; teamsMsgEl.innerText = "🔌 Yanlış kabloyu çektim..."; teamsMsgEl.style.color = "#000"; teamsNotifEl.style.borderLeftColor = "#000"; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "TERS DÜNYA!", "#000"); setTimeout(() => { isRotatedMode = false; gameContainer.style.transform = "rotate(0deg)"; }, 5000); }
+               else if (currentScenario === 'popcu_berke') {
+            playSound('error');
+            isStalkerAdActive = true; 
+            setTimeout(() => { isStalkerAdActive = false; }, 8000);
+            teamsSenderEl.innerText = "IT Destek Berke";
+            teamsMsgEl.innerText = "🔥 Abi virüs programını kapattım hızlansın diye.";
+            teamsMsgEl.style.color = "#ff0000";
+            teamsNotifEl.style.borderLeftColor = "#ff0000";
+            createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "VIRUS ALERT!", "#ff0000");
+        }
+        teamsTimeout = setTimeout(() => { hideTeamsNotification(); }, 10000);
+    }
+    function createExplosion(x, y, color, amount = 10, speed = 1) { for (let i = 0; i < amount; i++) particles.push(new Particle(x, y, color, speed)); }
+    function createBossDestruction() {
+        playSound('shield_break'); for(let i=0; i<300; i++) { let color = Math.random() < 0.5 ? '#0078D4' : (Math.random() < 0.5 ? '#FF4500' : '#FFD700'); particles.push(new Particle(exchangeLogo.x, exchangeLogo.y, color, 5.0, true)); }
+        for(let i=0; i<5; i++) { setTimeout(() => { shockwaves.push(new Shockwave(exchangeLogo.x, exchangeLogo.y)); }, i * 200); }
+        flashLayer.style.opacity = 1; setTimeout(() => { flashLayer.style.opacity = 0; }, 200); screenShake = 100; bossHitFlash = 5.0; ramValEl.innerText = "OFFLINE"; ramBoxEl.classList.add('ram-offline'); firewallBoxEl.classList.remove('firewall-active'); hideTeamsNotification();
+    }
+    function createFloatingText(x, y, text, color = '#333') { floatingTexts.push(new FloatingText(x, y, text, color)); }
+
+    function initMails() {
+        mails = []; fallingMails = []; incomingSpams = []; particles = []; floatingTexts = []; ddosBullets = []; bossProjectiles = []; shockwaves = [];
+        if (currentLevel === 1) { score = 0; money = 0; } bossMaxHP = 10 + (currentLevel - 1) * 5; bossHP = bossMaxHP;
+        isFirewallActive = false; hasFirewallActivated = false; firewallHP = 0; firewallBoxEl.classList.remove('firewall-active'); ramBoxEl.classList.remove('ram-offline'); isBossDestroyed = false;
+        updateRamDisplay(); hideTeamsNotification(); isRotatedMode = false; gameContainer.style.transform = "rotate(0deg)"; isDiscoMode = false; document.body.style.backgroundColor = "#f0f2f5"; isUpdateBlocked = false; isShopOpen = false; shopScreen.classList.add('hidden');
+        isFormatCReady = false; isPriorityReady = false; isDdosReady = false; isDdosActive = false; isMeetingReady = false; updateSkillsDisplay(); isSafeMode = false; resetEventTimer();
+        activeEvent = null; windSpeed = 0; cloudAlpha = 0; is2FALocked = false; keyBall = null; isMouseInverted = false; isLagActive = false; isUpsActive = false; isRgbActive = false;
+        isPlugPulled = false; plugTarget = null; gameContainer.classList.remove('plug-pulled'); document.body.classList.remove('ie-active');
+        meetingWindow.style.display = 'none'; recycleBinEl.style.display = 'none'; eventBanner.classList.remove('banner-visible'); eventDescription.classList.remove('desc-visible'); upsLayerEl.classList.remove('ups-active'); document.body.classList.remove('rgb-mode'); document.body.classList.remove('heat-active');
+        nephewBall = null; lastCloudTime = Date.now();
+        proxyShields = []; if (currentLevel >= 4) { for (let i = 0; i < 3; i++) { proxyShields.push({ angle: (i * Math.PI * 2) / 3, radius: 25, dist: exchangeLogo.radius + 180 }); } }
+        let layerCount = 5 + Math.floor((currentLevel - 1) / 2); if (layerCount > 8) layerCount = 8;
+        isWinMenuOpen = false; isUpdating = false; levelEl.innerText = currentLevel; updateScoreDisplay(); updateTeaDisplay(); updateComboDisplay();
+        const startRadius = exchangeLogo.radius + logicRadius - 2;
+        for (let i = 0; i < layerCount; i++) {
+            const currentRadius = startRadius + (i * logicRadius * 2.0); const circumference = 2 * Math.PI * currentRadius; const countInLayer = Math.floor(circumference / (logicRadius * 2.05)); const angleStep = (Math.PI * 2) / countInLayer;
+            for (let j = 0; j < countInLayer; j++) { const angle = j * angleStep; mails.push({ x: exchangeLogo.x + Math.cos(angle) * currentRadius, y: exchangeLogo.y + Math.sin(angle) * currentRadius, radius: logicRadius, color: mailColors[Math.floor(Math.random() * mailColors.length)], dx: 0, dy: 0, isRoot: (i === 0), isMoving: false }); }
+        }
+    }
+    
+    function createShooterMailObject() {
+        let type = 'normal'; 
+        let color = mailColors[Math.floor(Math.random() * mailColors.length)]; 
+        let chance = (bossHP === bossMaxHP) ? 0.08 : 0.1;
+        if (Math.random() < chance) { type = 'bomb'; color = '#333'; } 
+        else if (Math.random() < chance) { type = 'rainbow'; color = 'rainbow'; }
+        
+        return { x: GAME_WIDTH / 2, y: shooterY, radius: logicRadius, color: color, type: type, dx: 0, dy: 0, isRoot: false, isMoving: false };
+    }
+
+    function updateRamDisplay() { if(!isBossDestroyed) { ramValEl.innerText = bossHP + " GB"; if(bossHP <= 3) ramValEl.style.color = "#d32f2f"; else ramValEl.style.color = "#333"; } }
+    
+    function spawnShooterMail() {
+        if (isBossDestroyed) { shooterMail = null; return; }
+        if (!nextShooterMail) { nextShooterMail = createShooterMailObject(); }
+        shooterMail = nextShooterMail;
+        shooterMail.x = GAME_WIDTH / 2; shooterMail.y = shooterY;
+        nextShooterMail = createShooterMailObject();
+    }
+
+    function initGame() { 
+        startScreen.classList.add('hidden'); darknessLevel = 0;
+        if(brightnessOverlay) brightnessOverlay.style.opacity = 0; 
+        if (audioCtx.state === 'suspended') audioCtx.resume(); 
+        isGameRunning = true; startGame(); 
+    }
+    function startGame() { if (animationId) cancelAnimationFrame(animationId); currentLevel = 1; teaCharge = 0; isTeaActive = false; timeScale = 1.0; comboCount = 0; isGameRunning = true; isGameOver = false; initMails(); nextShooterMail = null; spawnShooterMail(); gameOverScreen.classList.add('hidden'); updateScreen.classList.add('hidden'); document.getElementById('game-win').classList.add('hidden'); loop(); }
+    
+    function nextLevel() { 
+        darknessLevel += 0.05;
+        if(darknessLevel > 0.95) darknessLevel = 0.95;
+        if(brightnessOverlay) brightnessOverlay.style.opacity = darknessLevel;
+        
+        currentLevel++; isLevelTransition = true; createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "LEVEL UP!", "#b38f00"); playSound('powerup'); hideTeamsNotification(); 
+        let delay = 2500 - (upgrades.ssd.level * 300); if(delay < 500) delay = 500;
+        setTimeout(() => { initMails(); spawnShooterMail(); isLevelTransition = false; }, delay); 
+    }
+    function addScore(points) { 
+        let multiplier = (comboCount > 1) ? comboCount : 1; if (isOverclockActive) multiplier *= 2; score += points * multiplier; if (score > highScore) highScore = score; 
+        let moneyGain = Math.floor( (points * 0.24) / (1 + (currentLevel * 0.5)) ); 
+        if(moneyGain < 1 && points > 0) moneyGain = 1; money += moneyGain; 
+        updateScoreDisplay(); if (!isTeaActive) { teaCharge += (points * multiplier) / teaFillRate; if (teaCharge > 100) teaCharge = 100; updateTeaDisplay(); } 
+    }
+    function updateComboDisplay() { if (comboCount > 1) { comboContainer.style.opacity = 1; comboContainer.style.transform = "rotate(-5deg) scale(1.2)"; comboValEl.innerText = comboCount; setTimeout(() => { comboContainer.style.transform = "rotate(-5deg) scale(1)"; }, 100); } else { comboContainer.style.opacity = 0; } }
+    function resetCombo() { comboCount = 0; isOverclockActive = false; if(!isTeaActive && !isPlugPulled) timeScale = 1.0; document.body.classList.remove('overclock-mode'); updateComboDisplay(); }
+    function increaseCombo() { comboCount++; if (comboCount > 10 && !isOverclockActive) { isOverclockActive = true; if(!isTeaActive && !isPlugPulled) timeScale = 0.7; document.body.classList.add('overclock-mode'); createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "OVERCLOCK!!!", "#00FF00"); } updateComboDisplay(); }
+    function updateTeaDisplay() { teaLiquidEl.style.height = `${teaCharge}%`; if (teaCharge >= 100) { teaContainerEl.classList.add('tea-ready'); teaLabelEl.innerText = "SPACE!"; teaLabelEl.style.color = "#ff4500"; } else { teaContainerEl.classList.remove('tea-ready'); teaLabelEl.innerText = "ÇAY"; teaLabelEl.style.color = "#555"; } }
+    
+    function activateTeaPower() { 
+        if (teaCharge >= 100 && !isTeaActive && !isGameOver && !isLevelTransition) { 
+            isTeaActive = true; teaCharge = 0; updateTeaDisplay(); timeScale = 0.2; 
+            document.body.classList.add('tea-active-mode');
+            createFloatingText(GAME_WIDTH/2, GAME_HEIGHT/2, "ÇAY POWER!", "#ff4500"); playSound('powerup'); 
+            setTimeout(() => { 
+                isTeaActive = false; 
+                document.body.classList.remove('tea-active-mode');
+                if(isOverclockActive && !isPlugPulled) timeScale = 0.7; else if (!isPlugPulled) timeScale = 1.0; 
+            }, 5000); 
+        } 
+    }
+
+    function updateScoreDisplay() { scoreEl.innerText = score; moneyDisplayEl.innerText = money; }
+    function triggerWindowsUpdate() { 
+        if (isUpdating || isGameOver || isLevelTransition || isBossDestroyed || isUpdateBlocked || isShopOpen) return; 
+        isUpdating = true; updateProgress = 0; updateScreen.classList.remove('hidden'); 
+        let interval = setInterval(() => { 
+            if (isGameOver) { clearInterval(interval); isUpdating = false; updateScreen.classList.add('hidden'); return; } 
+            updateProgress += Math.floor(Math.random() * 5) + Math.floor(upgrades.ssd.level * 1.5); 
+            if (updateProgress > 100) updateProgress = 100; updatePercentEl.innerText = updateProgress; 
+            if (updateProgress >= 100) { clearInterval(interval); setTimeout(() => { isUpdating = false; updateScreen.classList.add('hidden'); }, 500); } 
+        }, 150); 
+    }
+    function spawnIncomingMail() { if (isBossDestroyed || isGameOver || isLevelTransition || isUpdating || isShopOpen) return; incomingSpams.push(new IncomingMail()); }
+    function updateIncomingMails() {
+        for (let i = incomingSpams.length - 1; i >= 0; i--) {
+            const mailObj = incomingSpams[i]; mailObj.update(); let hit = false;
+            if (isFirewallActive) { const distToShield = Math.sqrt((mailObj.x - exchangeLogo.x)**2 + (mailObj.y - exchangeLogo.y)**2); if (distToShield < exchangeLogo.radius + 30) { createExplosion(mailObj.x, mailObj.y, '#00FFFF', 5); playSound('hit'); incomingSpams.splice(i, 1); continue; } }
+            const distToBoss = Math.sqrt((mailObj.x - exchangeLogo.x)**2 + (mailObj.y - exchangeLogo.y)**2); if (distToBoss < exchangeLogo.radius + mailObj.radius) { hit = true; mailObj.isRoot = true; }
+            if (!hit) { for (const existingMail of mails) { const dist = Math.sqrt((mailObj.x - existingMail.x)**2 + (mailObj.y - existingMail.y)**2); if (dist < existingMail.radius + mailObj.radius) { hit = true; mailObj.isRoot = false; break; } } }
+            if (hit) { const newMail = { x: mailObj.x, y: mailObj.y, radius: logicRadius, color: mailObj.color, dx: 0, dy: 0, isRoot: mailObj.isRoot || false, isMoving: false, isSpam: (mailObj.type === 'spam'), type: mailObj.type || 'normal' }; if(mailObj.type === 'encrypted') newMail.type = 'encrypted'; mails.push(newMail); if (mailObj.type === 'spam') { createFloatingText(mailObj.x, mailObj.y, "SPAM!", "#555"); playSound('hit'); } else { checkMatchesAndRemove(newMail); } incomingSpams.splice(i, 1); }
+        }
+    }
+    function triggerCloudMigration() {
+        if(mails.length > 0 && !isBossDestroyed) {
+            const targetIndex = Math.floor(Math.random() * mails.length);
+            const m = mails[targetIndex];
+            createExplosion(m.x, m.y, '#fff', 15);
+            createFloatingText(m.x, m.y, "UPLOADED", "#87CEEB");
+            mails.splice(targetIndex, 1);
+            dropFloatingMails();
+        }
+    }
+    function explodeReplyAll(centerMail) {
+        const radius = 60; 
+        const destroyedMails = [];
+        mails = mails.filter(m => {
+            const dist = Math.sqrt((m.x - centerMail.x)**2 + (m.y - centerMail.y)**2);
+            if (dist < radius) { destroyedMails.push(m); return false; } return true;
+        });
+        destroyedMails.forEach(m => createExplosion(m.x, m.y, m.color, 5));
+        createExplosion(centerMail.x, centerMail.y, '#FF00FF', 10);
+        createFloatingText(centerMail.x, centerMail.y, "REPLY ALL!", "#FF00FF");
+        addScore(destroyedMails.length * 200);
+        dropFloatingMails();
+    }
+
+    function updateBossProjectiles() {
+        for (let i = bossProjectiles.length - 1; i >= 0; i--) { const p = bossProjectiles[i]; p.y += p.speed * timeScale; if (p.y > GAME_HEIGHT) { bossProjectiles.splice(i, 1); continue; } if (Math.abs(p.x - GAME_WIDTH/2) < 40 && p.y > shooterY - 20 && p.y < shooterY + 20) { createExplosion(p.x, p.y, '#ff00ff', 10); playSound('error'); screenShake = 10; if(shooterMail && !shooterMail.isMoving) { shooterMail = null; spawnShooterMail(); } bossProjectiles.splice(i, 1); } }
+    }
+    function drawBossProjectiles() { ctx.save(); ctx.fillStyle = '#ff00ff'; ctx.shadowColor = '#ff00ff'; ctx.shadowBlur = 10; bossProjectiles.forEach(p => { ctx.fillRect(p.x - 5, p.y - 10, 10, 20); ctx.fillStyle = Math.random() < 0.5 ? '#fff' : '#ff00ff'; ctx.fillRect(p.x - 8 + Math.random()*16, p.y - 10, 4, 4); }); ctx.restore(); }
+    function updateDdos() {
+        if (isDdosActive && isMouseDown) { fireDdosBullet(); }
+        for (let i = ddosBullets.length - 1; i >= 0; i--) {
+            const b = ddosBullets[i]; b.x += b.vx; b.y += b.vy; if(b.x < 0 || b.x > GAME_WIDTH || b.y < 0) { ddosBullets.splice(i, 1); continue; }
+            let hit = false; if(!isBossDestroyed && Math.sqrt((b.x - exchangeLogo.x)**2 + (b.y - exchangeLogo.y)**2) < exchangeLogo.radius + b.radius) { createExplosion(b.x, b.y, '#00FF00', 3); bossHP -= 0.2; updateRamDisplay(); if (bossHP <= 0) { isBossDestroyed = true; createBossDestruction(); nextLevel(); } hit = true; }
+            if (!hit && isFirewallActive) { const dist = Math.sqrt((b.x - exchangeLogo.x)**2 + (b.y - exchangeLogo.y)**2); if (dist < exchangeLogo.radius + 30) { firewallHP--; createExplosion(b.x, b.y, '#00FFFF', 3); if(firewallValEl) firewallValEl.innerText = firewallHP; if (firewallHP <= 0) { isFirewallActive = false; playSound('shield_break'); createFloatingText(exchangeLogo.x, exchangeLogo.y - 80, "FIREWALL DOWN!", "#d32f2f"); if(firewallBoxEl) firewallBoxEl.classList.remove('firewall-active'); } hit = true; } }
+            if(!hit && currentLevel >= 4) { for(const s of proxyShields) { const sx = exchangeLogo.x + Math.cos(s.angle + proxyRotationAngle) * s.dist; const sy = exchangeLogo.y + Math.sin(s.angle + proxyRotationAngle) * s.dist; if (Math.sqrt((b.x - sx)**2 + (b.y - sy)**2) < s.radius + b.radius) { createExplosion(b.x, b.y, '#ff0000', 2); hit = true; break; } } }
+            if (!hit) { for (let j = mails.length - 1; j >= 0; j--) { const m = mails[j]; const dist = Math.sqrt((b.x - m.x)**2 + (b.y - m.y)**2); if(dist < m.radius + b.radius) { createExplosion(m.x, m.y, m.color, 10); mails.splice(j, 1); addScore(100); hit = true; break; } } } if(hit) ddosBullets.splice(i, 1);
+        }
+    }
+    function drawDdosBullets() { ctx.save(); ctx.fillStyle = '#00FF00'; ddosBullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2); ctx.fill(); }); ctx.restore(); }
+    function updateProxyShields() { if(currentLevel >= 4) { proxyRotationAngle += 0.02; } }
+    function drawProxyShields() { if(currentLevel >= 4 && !isBossDestroyed) { ctx.save(); proxyShields.forEach(s => { const sx = exchangeLogo.x + Math.cos(s.angle + proxyRotationAngle) * s.dist; const sy = exchangeLogo.y + Math.sin(s.angle + proxyRotationAngle) * s.dist; ctx.beginPath(); ctx.arc(sx, sy, s.radius, 0, Math.PI*2); ctx.fillStyle = '#d32f2f'; ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('404', sx, sy); }); ctx.restore(); } }
+    function updateGlitches() { if(Math.random() < 0.05) { mails.forEach(m => { if(m.type === 'glitch') { m.x += (Math.random() - 0.5) * 10; m.y += (Math.random() - 0.5) * 10; } }); } }
+    function loop() {
+        try {
+            if (isGameOver) return; if(isShopOpen) { requestAnimationFrame(loop); return; }
+            rainbowHue = (rainbowHue + 5) % 360; const levelSpamFactor = (currentLevel - 1) * 0.0005; const spawnChance = (0.0025 + levelSpamFactor + (10 - bossHP) * 0.0007) * timeScale;
+            if (Math.random() < spawnChance) spawnIncomingMail(); if (!isUpdating && !isBossDestroyed && Math.random() < 0.00005 * timeScale) triggerWindowsUpdate();
+            if(!isTeamsActive && !isBossDestroyed && !isUpdating && Math.random() < 0.0002 * timeScale) triggerTeamsNotification();
+            if (!activeEvent && !isGameOver && !isUpdating && Date.now() > nextEventTime) { triggerRandomEvent(); }
+            if (!isBossDestroyed && !isUpdating && currentLevel >= 2) { bossAttackTimer++; if (bossAttackTimer > 600) { bossAttackTimer = 0; bossProjectiles.push({x: exchangeLogo.x, y: exchangeLogo.y + 50, speed: 4 + (currentLevel * 0.5)}); playSound('error'); } }
+            if (!isBossDestroyed && !isFirewallActive && !hasFirewallActivated && bossHP <= bossMaxHP / 2) { isFirewallActive = true; hasFirewallActivated = true; firewallHP = 5; createFloatingText(exchangeLogo.x, exchangeLogo.y - 80, "FIREWALL ACTIVATED!", "#0078D4"); playSound('powerup'); if(firewallBoxEl) { firewallBoxEl.classList.add('firewall-active'); if(firewallValEl) firewallValEl.innerText = firewallHP; } }
+            if (isDiscoMode) document.body.style.backgroundColor = `hsl(${rainbowHue * 2}, 60%, 80%)`;
+            if (isPlugPulled) { timeScale = 0.3; if(Math.random()<0.1) timeScale = 0.05; } 
+            
+            // CLOUD MIGRATION LOGIC
+            if (upgrades.cloud.level > 0 && !isBossDestroyed && !isUpdating && !isGameOver) {
+                let cloudInterval = 15000 - (upgrades.cloud.level * 1000); 
+                if (Date.now() - lastCloudTime > cloudInterval) {
+                    triggerCloudMigration();
+                    lastCloudTime = Date.now();
+                }
+            }
+
+            if(nephewBall) {
+                nephewBall.x += nephewBall.dx * timeScale; nephewBall.y += nephewBall.dy * timeScale;
+                if(nephewBall.x < 0 || nephewBall.x > GAME_WIDTH) nephewBall.dx *= -1;
+                if(nephewBall.y < 0 || nephewBall.y > GAME_HEIGHT) nephewBall.dy *= -1;
+            }
+
+            // --- HOLOGRAM TARAMA ÇİZGİSİ GÜNCELLEME ---
+            scanlineOffset = (scanlineOffset + 1) % 20; 
+
+            ctx.save(); if (screenShake > 0) { const shakeX = (Math.random() - 0.5) * screenShake; const shakeY = (Math.random() - 0.5) * screenShake; ctx.translate(shakeX, shakeY); screenShake *= 0.9; if (screenShake < 0.5) screenShake = 0; }
+            ctx.clearRect(-20, -20, GAME_WIDTH + 40, GAME_HEIGHT + 40);
+            if (!isBossDestroyed) { updateClusterRotation(); updateProxyShields(); if (!isUpdating) updateShooterMail(); updateFallingMails(); updateIncomingMails(); }
+            updateDdos(); updateBossProjectiles(); updateGlitches();
+            if(activeEvent === 'cloud') { ctx.save(); let grad = ctx.createRadialGradient(exchangeLogo.x, exchangeLogo.y, 50, exchangeLogo.x, exchangeLogo.y, 300); grad.addColorStop(0, `rgba(255,255,255,${cloudAlpha})`); grad.addColorStop(1, "rgba(255,255,255,0)"); ctx.fillStyle = grad; ctx.fillRect(0,0, GAME_WIDTH, GAME_HEIGHT); ctx.restore(); }
+            particles.forEach((p, index) => { p.update(); if (p.alpha <= 0) particles.splice(index, 1); }); shockwaves.forEach((s, index) => { s.update(); if(s.alpha <= 0) shockwaves.splice(index, 1); }); floatingTexts.forEach((t, index) => { t.update(); if (t.life <= 0) floatingTexts.splice(index, 1); });
+            drawCables(); if (!isBossDestroyed) { drawExchangeLogo(); drawProxyShields(); }
+            if(is2FALocked && !isBossDestroyed) { ctx.save(); ctx.beginPath(); ctx.arc(exchangeLogo.x, exchangeLogo.y, exchangeLogo.radius + 20, 0, Math.PI*2); ctx.strokeStyle = 'red'; ctx.lineWidth = 5; ctx.setLineDash([10, 10]); ctx.stroke(); ctx.restore(); }
+            if(keyBall) { ctx.save(); ctx.beginPath(); ctx.arc(keyBall.x, keyBall.y, keyBall.radius, 0, Math.PI*2); ctx.fillStyle = '#FFD700'; ctx.fill(); ctx.fillStyle = 'black'; ctx.font = '20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText("🔑", keyBall.x, keyBall.y); ctx.restore(); }
+            if(plugTarget) { ctx.save(); ctx.beginPath(); ctx.arc(plugTarget.x, plugTarget.y, plugTarget.radius, 0, Math.PI*2); ctx.fillStyle = '#333'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = 'white'; ctx.font = '30px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText("🔌", plugTarget.x, plugTarget.y); ctx.restore(); }
+            
+            if(nephewBall) {
+                ctx.save(); ctx.beginPath(); ctx.arc(nephewBall.x, nephewBall.y, nephewBall.radius, 0, Math.PI*2);
+                ctx.fillStyle = '#FFD700'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.stroke();
+                ctx.fillStyle = 'black'; ctx.font = '30px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText("👑", nephewBall.x, nephewBall.y);
+                ctx.restore();
+            }
+
+            drawMails(); incomingSpams.forEach(obj => drawSingleMail(obj, 1.0, visualRadius)); drawFallingMails(); drawDdosBullets(); drawBossProjectiles(); particles.forEach(p => p.draw()); shockwaves.forEach(s => s.draw()); floatingTexts.forEach(t => t.draw());
+            if (!isBossDestroyed) { drawShooter(); if (!isUpdating && !isPlugPulled) drawAimLine(); } ctx.restore();
+            if (!isBossDestroyed && !isLevelTransition && !isSafeMode) { let lowestMailY = 0; mails.forEach(m => { if(m.y > lowestMailY) lowestMailY = m.y; }); if (mails.length > 0 && lowestMailY > shooterY - 50) { gameOver(); return; } }
+            animationId = requestAnimationFrame(loop);
+        } catch(e) { console.error(e); animationId = requestAnimationFrame(loop); }
+    }
+    function updateClusterRotation() { 
+       
+        const speedMultiplier = 1 + (bossMaxHP - bossHP) * 0.2; const deltaAngle = exchangeRotationSpeed * speedMultiplier * timeScale; const cos = Math.cos(deltaAngle); const sin = Math.sin(deltaAngle); 
+        mails.forEach(mail => { 
+            mail.vx = 0; mail.vy = 0; // Rıza etkisi biterse dursunlar
+            const relX = mail.x - exchangeLogo.x; const relY = mail.y - exchangeLogo.y; const newRelX = relX * cos - relY * sin; const newRelY = relX * sin + relY * cos; mail.x = exchangeLogo.x + newRelX; mail.y = exchangeLogo.y + newRelY; 
+        }); 
+        exchangeRotationAngle += deltaAngle; if (isFirewallActive) firewallAngle -= 0.05; 
+    }
+    function updateFallingMails() { for (let i = fallingMails.length - 1; i >= 0; i--) { const mail = fallingMails[i]; mail.dy += 0.4 * timeScale; mail.x += mail.dx * timeScale; mail.y += mail.dy * timeScale; if(mail.type === 'gold' && shooterMail && Math.sqrt((mail.x - shooterMail.x)**2 + (mail.y - shooterMail.y)**2) < mail.radius + shooterMail.radius) { money += 1000; moneyDisplayEl.innerText = money; createFloatingText(mail.x, mail.y, "+1000$", "#FFD700"); playSound('powerup'); fallingMails.splice(i, 1); continue; } if (mail.y > GAME_HEIGHT + 50) fallingMails.splice(i, 1); } }
+    
+    // OPTİMİZE EDİLMİŞ EXCHANGE LOGOSU
+    function drawExchangeLogo() {
+        ctx.save(); 
+        ctx.translate(exchangeLogo.x, exchangeLogo.y); 
+
+        if (isFirewallActive) { 
+            ctx.save(); ctx.rotate(firewallAngle); ctx.beginPath(); ctx.arc(0, 0, exchangeLogo.radius + 30, 0, Math.PI * 2); 
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)'; ctx.lineWidth = 6; ctx.setLineDash([15, 15]); ctx.stroke(); 
+            ctx.strokeStyle = '#00FFFF'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.restore(); 
+        }
+
+        ctx.rotate(exchangeRotationAngle); 
+
+        ctx.beginPath();
+        ctx.arc(0, 0, exchangeLogo.radius + 15, 0, Math.PI * 2);
+        let outerGlow = ctx.createRadialGradient(0, 0, exchangeLogo.radius, 0, 0, exchangeLogo.radius + 15);
+        if (bossHitFlash > 0) {
+             outerGlow.addColorStop(0, `rgba(255, 50, 0, ${0.8 * bossHitFlash})`);
+             outerGlow.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        } else {
+             outerGlow.addColorStop(0, 'rgba(0, 120, 212, 0.5)');
+             outerGlow.addColorStop(1, 'rgba(0, 120, 212, 0)');
+        }
+        ctx.fillStyle = outerGlow;
+        ctx.fill();
+
+        ctx.beginPath(); ctx.arc(0, 0, exchangeLogo.radius, 0, Math.PI * 2);
+        let mainColor1 = '#0078D4'; let mainColor2 = '#004377';
+        if (bossHitFlash > 0) { 
+            mainColor1 = `rgba(255, ${150 * (1-bossHitFlash)}, 0, 1)`; 
+            mainColor2 = `rgba(200, ${50 * (1-bossHitFlash)}, 0, 1)`;
+            bossHitFlash *= 0.9; if (bossHitFlash < 0.05) bossHitFlash = 0; 
+        }
+        let grd = ctx.createRadialGradient(0, 0, 10, 0, 0, exchangeLogo.radius); 
+        grd.addColorStop(0, mainColor2); grd.addColorStop(0.6, mainColor1); grd.addColorStop(1, '#002040'); 
+        ctx.fillStyle = grd; ctx.fill(); 
+
+        ctx.save();
+        ctx.beginPath(); ctx.arc(0,0, exchangeLogo.radius, 0, Math.PI*2); ctx.clip(); 
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; ctx.lineWidth = 2;
+        for(let i = -exchangeLogo.radius; i < exchangeLogo.radius; i+=20) {
+            let yPos = i + scanlineOffset;
+            if(yPos > exchangeLogo.radius) yPos -= (exchangeLogo.radius*2);
+            ctx.beginPath(); ctx.moveTo(-exchangeLogo.radius, yPos); ctx.lineTo(exchangeLogo.radius, yPos); ctx.stroke();
+        }
+        ctx.restore();
+
+        const scale = 1.2; ctx.scale(scale, scale); 
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-25, -15); ctx.lineTo(25, -15); ctx.lineTo(25, 20); ctx.lineTo(0, 35); ctx.lineTo(-25, 20); ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.moveTo(-25, -15); ctx.lineTo(0, 5); ctx.lineTo(25, -15); ctx.fill();
+        ctx.restore(); 
+    }
+
+    function drawMails() { mails.forEach(mail => drawSingleMail(mail, 1.0, visualRadius)); }
+    function drawFallingMails() { fallingMails.forEach(mail => drawSingleMail(mail, 0.8, visualRadius)); }
+    
+    // SOFT GÖLGE VERSİYONU (GÖZ YORMAZ)
+    function drawSingleMail(mail, alpha, r) {
+        if(isNaN(mail.x) || isNaN(mail.y)) return;
+        if (mail.x < -50 || mail.x > GAME_WIDTH + 50 || mail.y < -50 || mail.y > GAME_HEIGHT + 50) return;
+
+        ctx.save(); ctx.globalAlpha = alpha; 
+        let baseColor = mail.color; 
+        if (mail.type === 'rainbow') baseColor = `hsl(${rainbowHue}, 100%, 50%)`; 
+        if(activeEvent === 'rgb') { baseColor = `hsl(${(Date.now() / 5) % 360}, 100%, 50%)`; }
+        if(activeEvent === 'kvkk') { baseColor = '#444'; } 
+
+        if (mail.type !== 'glitch') { 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; ctx.beginPath();
+            ctx.arc(mail.x + 2, mail.y + 2, r, 0, Math.PI * 2); ctx.fill();
+        }
+
+        ctx.beginPath(); ctx.arc(mail.x, mail.y, r, 0, Math.PI * 2); 
+        let mainGrd = ctx.createRadialGradient(mail.x - r/3, mail.y - r/3, r/10, mail.x, mail.y, r);
+        mainGrd.addColorStop(0, lightenColor(baseColor, 30)); 
+        mainGrd.addColorStop(0.5, baseColor); mainGrd.addColorStop(1, darkenColor(baseColor, 60));  
+        ctx.fillStyle = mainGrd; ctx.fill();
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'; ctx.beginPath();
+        ctx.ellipse(mail.x - r/3, mail.y - r/3, r/3, r/5, Math.PI/4, 0, Math.PI*2); ctx.fill();
+        
+        if (mail.type === 'bomb' || mail.type === 'priority' || mail.type === 'formatc') {
+             ctx.shadowColor = mail.color; ctx.shadowBlur = 15; 
+             ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.5;
+             ctx.beginPath(); ctx.arc(mail.x, mail.y, r, 0, Math.PI*2); ctx.stroke();
+             ctx.shadowBlur = 0; 
+        }
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        if (mail.type === 'bomb') { ctx.font = 'bold 18px Arial'; ctx.fillText("💣", mail.x, mail.y); }
+        else if (mail.type === 'formatc') { ctx.font = 'bold 12px "Courier New"'; ctx.fillText("C:\\>", mail.x, mail.y); }
+        else if (mail.type === 'priority') { ctx.font = 'bold 20px Arial'; ctx.fillText("❗", mail.x, mail.y+2); }
+        else if (mail.type === 'encrypted') { ctx.font = '16px Arial'; ctx.fillText("🔒", mail.x, mail.y); }
+        else if (mail.type === 'gold') { ctx.font = 'bold 18px Arial'; ctx.fillText("$", mail.x, mail.y+1); }
+        else if (mail.type === 'glitch') { ctx.font = 'bold 16px Arial'; ctx.fillText("?", mail.x, mail.y); }
+        ctx.restore();
+    }
+    
+    function drawShooter() {
+        ctx.save(); 
+        ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 10; ctx.fillStyle = '#888'; 
+        ctx.beginPath(); ctx.arc(GAME_WIDTH / 2, shooterY + 15, 30, Math.PI, 0); ctx.fill();
+        
+        if (shooterMail) { 
+            drawSingleMail(shooterMail, 1.0, visualRadius); 
+            if (!shooterMail.isMoving) { 
+                ctx.shadowBlur = 0; 
+                if (shooterMail.type === 'rainbow') ctx.fillStyle = `hsl(${rainbowHue}, 100%, 50%)`; 
+                else ctx.fillStyle = shooterMail.color; 
+                ctx.fillRect(GAME_WIDTH / 2 - 10, shooterY + 30, 20, 8); 
+                ctx.strokeStyle = '#555'; ctx.lineWidth = 1; 
+                ctx.strokeRect(GAME_WIDTH / 2 - 10, shooterY + 30, 20, 8); 
+            } 
+        } else { 
+            ctx.fillStyle = '#aaa'; ctx.beginPath(); ctx.arc(GAME_WIDTH / 2, shooterY + 10, 15, 0, Math.PI*2); ctx.fill(); 
+        } 
+
+        if (upgrades.preview.level > 0 && nextShooterMail) {
+            nextShooterMail.x = GAME_WIDTH / 2 + 60; nextShooterMail.y = shooterY; 
+            drawSingleMail(nextShooterMail, 0.8, visualRadius * 0.7); 
+            ctx.fillStyle = '#555'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center';
+            ctx.fillText("NEXT", GAME_WIDTH / 2 + 60, shooterY + 25);
+        }
+        ctx.restore();
+    }
+
+    function drawAimLine() {
+        if (!shooterMail) return; ctx.save(); if (shooterMail.type === 'bomb') ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'; else ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+        let simX = shooterMail.x; let simY = shooterMail.y; let simDx = Math.cos(angle); let simDy = Math.sin(angle); ctx.beginPath(); ctx.moveTo(simX, simY); let hasBounced = false; const stepSize = 10;
+        for (let i = 0; i < 200; i++) {
+            let limit = 200; 
+            if(i > limit && !hasBounced) break; simX += simDx * stepSize; simY += simDy * stepSize;
+            if ((simX <= shooterRadius || simX >= GAME_WIDTH - shooterRadius) && !hasBounced) { simX = (simX <= shooterRadius) ? shooterRadius : GAME_WIDTH - shooterRadius; ctx.lineTo(simX, simY); simDx = -simDx; hasBounced = true; continue; }
+            let hit = false; if (!isBossDestroyed) { const distLogo = Math.sqrt((simX - exchangeLogo.x)**2 + (simY - exchangeLogo.y)**2); const checkRadius = isFirewallActive ? exchangeLogo.radius + 25 : exchangeLogo.radius; if (distLogo < checkRadius + shooterRadius) hit = true; }
+            if (!hit) { for (const mail of mails) { const distMail = Math.sqrt((simX - mail.x)**2 + (simY - mail.y)**2); if (distMail < mail.radius + shooterRadius) { hit = true; break; } } } if (hit || simY < 0) { ctx.lineTo(simX, simY); break; }
+        } ctx.stroke(); ctx.beginPath(); ctx.arc(simX, simY, 5, 0, Math.PI*2); ctx.strokeStyle = shooterMail.type === 'bomb' ? 'red' : '#555'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    }
+    function lightenColor(color, amount) { if (color.startsWith('#')) return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2)); return color; }
+    function darkenColor(color, amount) { if (color.startsWith('#')) return '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) - amount)).toString(16)).substr(-2)); return color; }
+    function updateShooterMail() {
+        if (shooterMail && shooterMail.isMoving) {
+            shooterMail.x += shooterMail.dx; shooterMail.y += shooterMail.dy; if(activeEvent === 'wind') { shooterMail.x += windSpeed; }
+            if (activeEvent === 'vpn') { if (shooterMail.x > GAME_WIDTH) shooterMail.x = 0; else if (shooterMail.x < 0) shooterMail.x = GAME_WIDTH; } else { if (shooterMail.x - shooterMail.radius < 0 || shooterMail.x + shooterMail.radius > GAME_WIDTH) shooterMail.dx *= -1; }
+            if (shooterMail.y - shooterMail.radius < 0) { shooterMail.dy = Math.abs(shooterMail.dy); shooterMail.y = shooterMail.radius + 2; }
+            if (shooterMail.y > GAME_HEIGHT + 50) { if (shooterMail.type === 'formatc' || shooterMail.type === 'priority') { createExplosion(shooterMail.x, shooterMail.y, '#555', 5); createFloatingText(shooterMail.x, shooterMail.y - 50, "WASTED!", "#d32f2f"); playSound('hit'); } spawnShooterMail(); resetCombo(); }
+            if (checkCollisionWithMails(shooterMail)) { if(shooterMail.type !== 'priority') { shooterMail.isMoving = false; spawnShooterMail(); } }
+        }
+    }
+    function checkCollision(obj1, obj2) { const dx = obj1.x - obj2.x; const dy = obj1.y - obj2.y; return Math.sqrt(dx*dx + dy*dy) <= (obj1.radius + obj2.radius); }
+    function areNeighbors(m1, m2) { const dx = m1.x - m2.x; const dy = m1.y - m2.y; return Math.sqrt(dx*dx + dy*dy) <= (m1.radius + m2.radius) * 1.25; }
+    function checkCollisionWithMails(shotMail) {
+        if (isBossDestroyed) return false;
+        if (activeEvent === 'bin') { const binX = GAME_WIDTH - 50; const binY = 300; if (Math.hypot(shotMail.x - binX, shotMail.y - binY) < 60) { createExplosion(shotMail.x, shotMail.y, '#555', 10); createFloatingText(shotMail.x, shotMail.y, "DELETED!", "#000"); playSound('hit'); return true; } }
+        if(plugTarget) { const distPlug = Math.sqrt((shotMail.x - plugTarget.x)**2 + (shotMail.y - plugTarget.y)**2); if(distPlug < shotMail.radius + plugTarget.radius) { createExplosion(plugTarget.x, plugTarget.y, '#fff', 20); createFloatingText(plugTarget.x, plugTarget.y, "CONNECTED!", "#00FF00"); playSound('powerup'); endEvent('plug'); shotMail.dx *= -1; return true; } }
+        if(nephewBall) { if(checkCollision(shotMail, nephewBall)) { playSound('clank'); createFloatingText(nephewBall.x, nephewBall.y, "DOKUNULMAZ!", "#FFD700"); shotMail.dx *= -1.5; shotMail.dy *= -1.5; return true; } }
+
+        if (isFirewallActive) { const distToShield = Math.sqrt((shotMail.x - exchangeLogo.x)**2 + (shotMail.y - exchangeLogo.y)**2); if (distToShield < exchangeLogo.radius + 30) { shotMail.dx = 0; shotMail.dy = 0; if(shotMail.type === 'priority') { isPriorityReady = false; updateSkillsDisplay(); spawnShooterMail(); } firewallHP--; createFloatingText(shotMail.x, shotMail.y, "BLOCKED!", "#0078D4"); playSound('hit'); createExplosion(shotMail.x, shotMail.y, '#00FFFF', 5); if(firewallValEl) firewallValEl.innerText = firewallHP; if (firewallHP <= 0) { isFirewallActive = false; playSound('shield_break'); createFloatingText(exchangeLogo.x, exchangeLogo.y - 80, "FIREWALL DOWN!", "#d32f2f"); if(firewallBoxEl) firewallBoxEl.classList.remove('firewall-active'); } return true; } }
+        if(currentLevel >= 4) { for(const s of proxyShields) { const sx = exchangeLogo.x + Math.cos(s.angle + proxyRotationAngle) * s.dist; const sy = exchangeLogo.y + Math.sin(s.angle + proxyRotationAngle) * s.dist; if (Math.sqrt((shotMail.x - sx)**2 + (shotMail.y - sy)**2) < s.radius + shotMail.radius) { if(shotMail.type === 'formatc' || shotMail.type === 'priority') { createExplosion(sx, sy, '#d32f2f', 10); playSound('pop'); return false; } else { shotMail.dx *= -1.2; shotMail.dy *= -1.2; createFloatingText(shotMail.x, shotMail.y, "ACCESS DENIED", "#d32f2f"); playSound('error'); return true; } } } }
+        if(is2FALocked) { const distToShield = Math.sqrt((shotMail.x - exchangeLogo.x)**2 + (shotMail.y - exchangeLogo.y)**2); if(distToShield < exchangeLogo.radius + 60) { shotMail.dx *= -1; shotMail.dy *= -1; createFloatingText(shotMail.x, shotMail.y, "2FA LOCKED", "#d32f2f"); return true; } }
+        if(keyBall) { 
+            const distKey = Math.sqrt((shotMail.x - keyBall.x)**2 + (shotMail.y - keyBall.y)**2); 
+            if(distKey < shotMail.radius + keyBall.radius) { 
+                is2FALocked = false; 
+                // 2FA'yı manuel bitir, banner'ı kaldır
+                endEvent('2fa');
+                
+                createExplosion(keyBall.x, keyBall.y, '#FFD700', 20); 
+                createFloatingText(keyBall.x, keyBall.y, "2FA UNLOCKED!", "#00FF00"); 
+                keyBall = null; 
+                shotMail.dx *= -1; 
+                return true; 
+            } 
+        }
+        if (checkCollision(shotMail, exchangeLogo)) { shotMail.dx = 0; shotMail.dy = 0; let damage = 1; if (shotMail.type === 'bomb') { damage = 3; createExplosion(shotMail.x, shotMail.y, 'red', 30); createFloatingText(shotMail.x, shotMail.y, "CRITICAL!", "#d32f2f"); } else if (shotMail.type === 'priority') { damage = 3; createExplosion(shotMail.x, shotMail.y, '#FF0000', 30); createFloatingText(shotMail.x, shotMail.y, "PRIORITY HIT!", "#FF0000"); isPriorityReady = false; updateSkillsDisplay(); spawnShooterMail(); } else { createExplosion(shotMail.x, shotMail.y, 'white', 10); createFloatingText(shotMail.x, shotMail.y, "HIT!", "#d32f2f"); } bossHP -= damage; bossHitFlash = 1; screenShake = 10; increaseCombo(); addScore(1000 * damage); updateRamDisplay(); if (bossHP <= 0) { isBossDestroyed = true; createBossDestruction(); nextLevel(); } return true; }
+        let hitAny = false;
+        for (let i = mails.length - 1; i >= 0; i--) {
+            const mail = mails[i];
+            if (checkCollision(shotMail, mail)) {
+                if (shotMail.type === 'formatc') { explodeFormatC(shotMail); isFormatCReady = false; updateSkillsDisplay(); playSound('error'); return true; }
+                if (shotMail.type === 'priority') { createExplosion(mail.x, mail.y, mail.color, 15, 2); addScore(200); mails.splice(i, 1); playSound('hit'); hitAny = true; }
+                else {
+                    if (mail.type === 'encrypted') { mail.type = 'normal'; mail.color = mailColors[Math.floor(Math.random() * mailColors.length)]; playSound('clank'); createFloatingText(mail.x, mail.y, "DECRYPTED", "#fff"); createExplosion(mail.x, mail.y, '#ccc', 5); const angle = Math.atan2(shotMail.y - mail.y, shotMail.x - mail.x); shotMail.x = mail.x + Math.cos(angle) * (mail.radius + shotMail.radius); shotMail.y = mail.y + Math.sin(angle) * (mail.radius + shotMail.radius); shotMail.dx *= -1; shotMail.dy *= -1; return true; }
+                    const angle = Math.atan2(shotMail.y - mail.y, shotMail.x - mail.x); shotMail.x = mail.x + Math.cos(angle) * (mail.radius + shotMail.radius); shotMail.y = mail.y + Math.sin(angle) * (mail.radius + shotMail.radius);
+                    if (shotMail.type === 'rainbow') { shotMail.color = mail.color; shotMail.type = 'normal'; }
+                    if (shotMail.type === 'bomb') { explodeBomb(shotMail); return true; }
+                    mails.push(shotMail); checkMatchesAndRemove(shotMail); playSound('hit'); return true;
+                }
+            }
+        }
+        if(hitAny) dropFloatingMails(); return false;
+    }
+    function explodeFormatC(centerMail) { const killRadius = logicRadius * 9.0; const destroyedMails = []; mails = mails.filter(m => { const dist = Math.sqrt((m.x - centerMail.x)**2 + (m.y - centerMail.y)**2); if (dist < killRadius) { destroyedMails.push(m); return false; } return true; }); destroyedMails.forEach(m => { createExplosion(m.x, m.y, '#000', 5); createExplosion(m.x, m.y, '#00FF00', 3); }); createExplosion(centerMail.x, centerMail.y, '#000', 50, 2); createFloatingText(centerMail.x, centerMail.y, "FORMAT COMPLETE", "#00FF00"); screenShake = 30; addScore(destroyedMails.length * 300); dropFloatingMails(); }
+    function explodeBomb(bombMail) { const explodeRadius = logicRadius * 4; const destroyedMails = []; mails = mails.filter(m => { const dist = Math.sqrt((m.x - bombMail.x)**2 + (m.y - bombMail.y)**2); if (dist < explodeRadius) { destroyedMails.push(m); return false; } return true; }); destroyedMails.forEach(m => createExplosion(m.x, m.y, m.color)); createExplosion(bombMail.x, bombMail.y, '#333', 30); createFloatingText(bombMail.x, bombMail.y, "BOOM!", "#333"); screenShake = 15; addScore(destroyedMails.length * 200); dropFloatingMails(); }
+    function checkMatchesAndRemove(landedMail) {
+        const group = findConnectedMails(landedMail, landedMail.color, new Set());
+        if (group.length >= 3) { increaseCombo(); group.forEach(m => createExplosion(m.x, m.y, m.color)); createFloatingText(landedMail.x, landedMail.y, `+${group.length * 100}`, "#555"); mails = mails.filter(m => !group.includes(m)); addScore(group.length * 100); playSound('pop'); dropFloatingMails(); } else { resetCombo(); }
+    }
+    function findConnectedMails(startMail, color, visited) { const stack = [startMail]; const connected = []; visited.add(startMail); while (stack.length > 0) { const current = stack.pop(); if (current.color === color) { connected.push(current); for (const neighbor of mails) { if (!visited.has(neighbor) && neighbor.color === color && areNeighbors(current, neighbor)) { visited.add(neighbor); stack.push(neighbor); } } } } return connected; }
+    function dropFloatingMails() {
+        const connectedToCenter = new Set(); const queue = [];
+        if (!isBossDestroyed) { mails.forEach(mail => { if (checkCollision(mail, {x: exchangeLogo.x, y: exchangeLogo.y, radius: exchangeLogo.radius + 5})) { connectedToCenter.add(mail); queue.push(mail); } }); while (queue.length > 0) { const current = queue.shift(); mails.forEach(neighbor => { if (!connectedToCenter.has(neighbor) && areNeighbors(current, neighbor)) { connectedToCenter.add(neighbor); queue.push(neighbor); } }); } }
+        const floating = []; const saved = []; mails.forEach(mail => { if (connectedToCenter.has(mail)) saved.push(mail); else { mail.dx = (Math.random() - 0.5) * 4; mail.dy = 2; floating.push(mail); } });
+        if (floating.length > 0) { addScore(floating.length * 250); if (floating.length > 3) createFloatingText(GAME_WIDTH / 2, GAME_HEIGHT / 2, "GRAVITY KILL!", "#d32f2f"); }
+        mails = saved; fallingMails.push(...floating);
+    }
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect(); 
+        let mouseX = e.clientX - rect.left; 
+        let mouseY = e.clientY - rect.top;
+        document.body.style.setProperty('--mouse-x', mouseX + 'px'); 
+        document.body.style.setProperty('--mouse-y', mouseY + 'px');
+        
+        if (isMouseInverted) { mouseX = GAME_WIDTH - mouseX; } 
+        if (isRotatedMode) { mouseX = GAME_WIDTH - mouseX; mouseY = GAME_HEIGHT - mouseY; }
+        
+        if (mouseY < shooterY - shooterRadius) { 
+            angle = Math.atan2(mouseY - shooterMail?.y || shooterY, mouseX - shooterMail?.x || GAME_WIDTH/2); 
+            // --- OĞUZ'UN MOUSE SİLME EFEKTİ ---
+            if (isSlipperyMouse) { angle += Math.sin(Date.now() / 150) * 0.5; }
+            if (angle > -Math.PI / 2 + 1.3) angle = -Math.PI / 2 + 1.3; 
+            if (angle < -Math.PI / 2 - 1.3) angle = -Math.PI / 2 - 1.3; 
+        }
+
+        // --- POP-UP MOUSE TAKİBİ ---
+        if (isStalkerAdActive && trollPopupEl) {
+            trollPopupEl.style.left = (mouseX - 100) + 'px'; trollPopupEl.style.top = (mouseY - 180) + 'px'; trollPopupEl.style.display = 'flex';
+        } else if (trollPopupEl) {
+            trollPopupEl.style.display = 'none';
+        }
+    });
+    canvas.addEventListener('mousedown', () => { isMouseDown = true; }); canvas.addEventListener('mouseup', () => { isMouseDown = false; }); canvas.addEventListener('mouseleave', () => { isMouseDown = false; });
+    canvas.addEventListener('click', () => {
+        if (isUpdating || !isGameRunning || isShopOpen) return;
+        
+        if (shooterMail && !shooterMail.isMoving && !isGameOver && !isLevelTransition) {
+            const delay = isLagActive ? 1000 : 0; 
+            if(delay > 0) createFloatingText(shooterMail.x, shooterMail.y - 20, "LAG...", "#d32f2f");
+
+            setTimeout(() => { 
+                if(shooterMail.type === 'formatc') { isFormatCReady = false; updateSkillsDisplay(); } 
+                if(shooterMail.type === 'priority') { isPriorityReady = false; updateSkillsDisplay(); } 
+                shooterMail.dx = Math.cos(angle) * shooterSpeed; 
+                shooterMail.dy = Math.sin(angle) * shooterSpeed; 
+                shooterMail.isMoving = true; 
+                playSound('shoot'); 
+            }, delay);
+        }
+    });
+    window.addEventListener('keydown', (e) => { if (e.code === 'Space') activateTeaPower(); });
+    function gameOver() { isGameOver = true; isGameRunning = false; gameOverScreen.classList.remove('hidden'); if(finalScoreEl) finalScoreEl.innerText = score; if (animationId) cancelAnimationFrame(animationId); }
+</script>
+<script type="module">
+  // Gerekli kütüphaneleri import ediyoruz
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+  // Senin Configlerin (Aynen korudum)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDSOBPhiV46yxaJ17g4wLGlI-5MxIbEj-4",
+    authDomain: "exchange-patlatmaca.firebaseapp.com",
+    projectId: "exchange-patlatmaca",
+    storageBucket: "exchange-patlatmaca.firebasestorage.app",
+    messagingSenderId: "537575220156",
+    appId: "1:537575220156:web:250dd00befe7357fb901b9",
+    measurementId: "G-KS1RTX4R2M"
+  };
+
+  // Başlatıyoruz
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // --- 1. SKOR KAYDETME (Global erişim için window'a atıyoruz) ---
+  window.skoruGonder = async function() {
+      const adInput = document.getElementById("oyuncuAdiInput");
+      const ad = adInput.value.trim();
+      
+      // Oyunun kendi score değişkenini alıyoruz (senin kodundaki 'score' değişkeni)
+      // window.score yoksa direkt global scope'taki score'u okumaya çalışacak ama modül içinde olduğumuz için
+      // garanti olsun diye senin oyun kodundaki score elementinden okuyalım veya global değişkene ulaşalım.
+      // Not: Senin ana oyun kodun modül olmadığı için 'score' global değişkendir, ama buradan erişmek zor olabilir.
+      // O yüzden en temiz yöntem HTML'den okumak:
+      const mevcutSkor = parseInt(document.getElementById("final-score-val").innerText) || 0;
+
+      if(ad === "") {
+          alert("Adını yazmazsan seni nasıl öveceğiz koçum?");
+          return;
+      }
+
+      try {
+          const btn = document.querySelector("button[onclick='skoruGonder()']");
+          btn.disabled = true;
+          btn.innerText = "Yollanıyor...";
+
+          await addDoc(collection(db, "skorlar"), {
+              isim: ad,
+              skor: mevcutSkor,
+              tarih: new Date()
+          });
+
+          alert("Skorun bulutlara uçtu aslanım! Listeye bak.");
+          btn.innerText = "KAYDEDİLDİ";
+          
+      } catch (e) {
+          console.error("Firebase Hatası:", e);
+          alert("Sunucu patladı (ironik değil mi?): " + e.message);
+      }
+  }
+
+  // --- 2. CANLI LİSTELEME ---
+  const q = query(collection(db, "skorlar"), orderBy("skor", "desc"), limit(10));
+  
+  onSnapshot(q, (snapshot) => {
+    const liste = document.getElementById("liderTablosu");
+    liste.innerHTML = "";
+    
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        // Basit bir güvenlik, XSS yemeyelim
+        const temizIsim = data.isim.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        liste.innerHTML += `
+            <li style="display: flex; justify-content: space-between; border-bottom: 1px solid #ccc; padding: 2px 0;">
+                <span>${temizIsim}</span>
+                <span style="font-weight: bold; color: #0078D4;">${data.skor}</span>
+            </li>
+        `;
+    });
+  });
+</script>
+</body>
+</html>
